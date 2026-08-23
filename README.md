@@ -13,10 +13,6 @@ Monorepo com dois workspaces npm:
 
 ## Apresentação do projeto
 
-O LockiMini oferece uma experiência de loja responsiva para o cliente e um painel
-administrativo completo para a operação. As telas abaixo mostram a vitrine, o catálogo e
-os recursos de gestão construídos no projeto.
-
 ### Loja
 
 **Página inicial** — hero com destaque para estoque sincronizado em tempo real.
