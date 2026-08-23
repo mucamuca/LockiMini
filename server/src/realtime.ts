@@ -5,6 +5,9 @@ import { ACCESS_COOKIE, verifyAccessToken, type JwtPayload } from './lib/tokens.
 
 export type StockEvent = {
   productId: string;
+  /** "" = evento agregado do produto; preenchido = uma variacao especifica. */
+  variantId: string;
+  variantLabel: string | null;
   sku: string;
   available: number;
   quantity: number;

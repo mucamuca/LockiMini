@@ -28,13 +28,13 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!error) return this.props.children;
 
     return (
-      <div className="grid min-h-screen place-items-center bg-ink-50 px-4">
+      <div className="grid min-h-screen place-items-center bg-ink-50 dark:bg-ink-925 px-4">
         <div className="card w-full max-w-md p-6 text-center">
-          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 text-2xl">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-rose-50 dark:bg-rose-950/40 text-2xl">
             !
           </div>
-          <h1 className="mt-4 text-lg font-bold text-ink-900">Algo quebrou nesta tela</h1>
-          <p className="mt-2 text-sm text-ink-500">
+          <h1 className="mt-4 text-lg font-bold text-ink-900 dark:text-ink-50">Algo quebrou nesta tela</h1>
+          <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">
             O problema ficou contido aqui — seu carrinho e seus pedidos estao intactos.
           </p>
 

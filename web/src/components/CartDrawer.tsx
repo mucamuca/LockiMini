@@ -29,9 +29,9 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label="Carrinho">
       <div className="absolute inset-0 bg-ink-950/40 backdrop-blur-[2px]" onClick={onClose} />
 
-      <aside className="relative flex h-full w-full max-w-md animate-slide-in flex-col bg-white shadow-2xl">
-        <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-          <h2 className="flex items-center gap-2 text-base font-bold text-ink-900">
+      <aside className="relative flex h-full w-full max-w-md animate-slide-in flex-col bg-white dark:bg-ink-900 shadow-2xl">
+        <header className="flex items-center justify-between border-b border-ink-100 dark:border-ink-800 px-5 py-4">
+          <h2 className="flex items-center gap-2 text-base font-bold text-ink-900 dark:text-ink-50">
             <ShoppingBag className="h-5 w-5" />
             Seu carrinho
             {cart && cart.itemCount > 0 && (
@@ -57,8 +57,8 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
           {empty && (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <ShoppingBag className="mb-4 h-12 w-12 text-ink-200" />
-              <p className="font-semibold text-ink-800">Seu carrinho esta vazio</p>
-              <p className="mt-1 text-sm text-ink-500">Que tal comecar pelos destaques?</p>
+              <p className="font-semibold text-ink-800 dark:text-ink-100">Seu carrinho esta vazio</p>
+              <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">Que tal comecar pelos destaques?</p>
               <Link to="/catalogo" onClick={onClose} className="btn-primary mt-5">
                 Ver catalogo
               </Link>
@@ -70,7 +70,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
               <li
                 key={item.id}
                 className={`flex gap-3 rounded-xl border p-3 ${
-                  item.issue ? 'border-amber-200 bg-amber-50/50' : 'border-ink-100'
+                  item.issue ? 'border-amber-200 bg-amber-50/50' : 'border-ink-100 dark:border-ink-800'
                 }`}
               >
                 <img
@@ -84,23 +84,26 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                   <Link
                     to={`/produto/${item.slug}`}
                     onClick={onClose}
-                    className="line-clamp-2 text-sm font-semibold text-ink-900 hover:text-brand-700"
+                    className="line-clamp-2 text-sm font-semibold text-ink-900 dark:text-ink-50 hover:text-brand-700 dark:hover:text-brand-400"
                   >
                     {item.name}
                   </Link>
-                  <p className="mt-0.5 text-xs text-ink-500">{money(item.unitPriceCents)} cada</p>
+                  {item.variantLabel && (
+                    <span className="chip mt-1 bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-300">{item.variantLabel}</span>
+                  )}
+                  <p className="mt-0.5 text-xs text-ink-500 dark:text-ink-400">{money(item.unitPriceCents)} cada</p>
 
                   {item.issue && (
-                    <p className="mt-1.5 flex items-start gap-1 text-xs font-medium text-amber-700">
+                    <p className="mt-1.5 flex items-start gap-1 text-xs font-medium text-amber-700 dark:text-amber-300">
                       <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
                       {item.issue}
                     </p>
                   )}
 
                   <div className="mt-2 flex items-center justify-between">
-                    <div className="flex items-center rounded-lg border border-ink-200">
+                    <div className="flex items-center rounded-lg border border-ink-200 dark:border-ink-700">
                       <button
-                        className="px-2 py-1 text-ink-600 transition hover:bg-ink-50 disabled:opacity-40"
+                        className="px-2 py-1 text-ink-600 dark:text-ink-300 transition hover:bg-ink-50 dark:hover:bg-ink-850 disabled:opacity-40"
                         disabled={busy}
                         onClick={() => update.mutate({ itemId: item.id, quantity: item.quantity - 1 })}
                         aria-label="Diminuir quantidade"
@@ -109,7 +112,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                       </button>
                       <span className="min-w-8 text-center text-sm font-semibold">{item.quantity}</span>
                       <button
-                        className="px-2 py-1 text-ink-600 transition hover:bg-ink-50 disabled:opacity-40"
+                        className="px-2 py-1 text-ink-600 dark:text-ink-300 transition hover:bg-ink-50 dark:hover:bg-ink-850 disabled:opacity-40"
                         disabled={busy || item.quantity >= item.stock.available}
                         onClick={() => update.mutate({ itemId: item.id, quantity: item.quantity + 1 })}
                         aria-label="Aumentar quantidade"
@@ -119,9 +122,9 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-ink-900">{money(item.totalCents)}</span>
+                      <span className="text-sm font-bold text-ink-900 dark:text-ink-50">{money(item.totalCents)}</span>
                       <button
-                        className="rounded-lg p-1.5 text-ink-400 transition hover:bg-rose-50 hover:text-rose-600"
+                        className="rounded-lg p-1.5 text-ink-400 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600"
                         disabled={busy}
                         onClick={() => remove.mutate(item.id)}
                         aria-label={`Remover ${item.name}`}
@@ -137,27 +140,27 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
         </div>
 
         {cart && cart.items.length > 0 && (
-          <footer className="border-t border-ink-100 bg-ink-50/60 px-5 py-4">
+          <footer className="border-t border-ink-100 dark:border-ink-800 bg-ink-50/60 px-5 py-4">
             {cart.missingForFreeShippingCents > 0 ? (
-              <p className="mb-3 rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-800">
+              <p className="mb-3 rounded-lg bg-brand-50 dark:bg-brand-900/25 px-3 py-2 text-xs font-medium text-brand-800">
                 Faltam {money(cart.missingForFreeShippingCents)} para frete gratis.
               </p>
             ) : (
-              <p className="mb-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+              <p className="mb-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
                 Frete gratis liberado.
               </p>
             )}
 
             <dl className="space-y-1.5 text-sm">
-              <div className="flex justify-between text-ink-600">
+              <div className="flex justify-between text-ink-600 dark:text-ink-300">
                 <dt>Subtotal</dt>
                 <dd>{money(cart.subtotalCents)}</dd>
               </div>
-              <div className="flex justify-between text-ink-600">
+              <div className="flex justify-between text-ink-600 dark:text-ink-300">
                 <dt>Frete</dt>
                 <dd>{cart.shippingCents === 0 ? 'Gratis' : money(cart.shippingCents)}</dd>
               </div>
-              <div className="flex justify-between border-t border-ink-200 pt-2 text-base font-bold text-ink-900">
+              <div className="flex justify-between border-t border-ink-200 dark:border-ink-700 pt-2 text-base font-bold text-ink-900 dark:text-ink-50">
                 <dt>Total</dt>
                 <dd>{money(cart.totalCents)}</dd>
               </div>

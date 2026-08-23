@@ -139,9 +139,10 @@ Com o servidor rodando, em outro terminal:
 npm run smoke
 ```
 
-São 25 verificações ponta a ponta: preço recalculado no servidor, baixa de estoque
+São 38 verificações ponta a ponta: preço recalculado no servidor, baixa de estoque
 somente após pagamento aprovado, devolução das unidades quando o cartão é recusado,
-reserva do Pix, disputa simultânea pela última unidade e as guardas do painel admin.
+reserva do Pix, disputa simultânea pela última unidade, isolamento de estoque entre
+variações do mesmo produto e as guardas do painel admin.
 
 ---
 
@@ -316,11 +317,108 @@ estoque é SQL padrão.
 
 ---
 
+## Variações de produto (cor e tamanho)
+
+Alguns produtos vendem mais de uma combinação: o teclado vem em duas cores e três
+layouts, a mochila em três volumes, o fone em três cores. A decisão de arquitetura
+que sustenta isso é uma só:
+
+> **O estoque pertence à combinação, não ao produto.**
+
+Um "Grafite / Full-size" esgotado não pode derrubar a venda do "Branco Gelo / 60%".
+Na prática, a tabela `Inventory` ganhou uma chave de variação e passou a ter uma
+linha por combinação vendável — e toda a garantia atômica que já existia continua
+valendo, agora nesse nível:
+
+```sql
+UPDATE "Inventory"
+   SET "reserved" = "reserved" + ?
+ WHERE "productId" = ?
+   AND "variantId" = ?          -- a guarda agora mira a combinação
+   AND "quantity" - "reserved" >= ?
+```
+
+Duas pessoas disputando o último "Preto M" colidem entre si; nenhuma delas trava
+a venda do "Preto G". O smoke prova exatamente isso — comprar uma variação baixa
+só o estoque dela e deixa as outras intactas.
+
+Detalhes que valem registro:
+
+- **Produto com variação exige escolha.** Adicionar ao carrinho sem informar a
+  combinação é recusado com `variant_required`. Sem essa regra, o pedido chegaria
+  ao depósito impossível de separar.
+- **A vitrine não adiciona direto.** Cartão de produto com variação mostra
+  "Escolher opções" e leva à página, porque a escolha não cabe num cartão.
+- **Preço por combinação.** O layout full-size custa mais que o 60%; a vitrine
+  mostra "a partir de" com o menor preço.
+- **Opção sem estoque aparece riscada**, não escondida — quem procura aquela cor
+  precisa saber que ela existe e acabou.
+- **O pedido guarda o rótulo por extenso** (`variantLabel`), não só o id: se a
+  variação for renomeada ou sair de linha, o pedido antigo continua legível.
+- **Dois eixos, colunas explícitas.** `colorName` e `sizeName` são colunas, não
+  uma tabela genérica de atributos. A loja vende cor e tamanho; modelar só o que
+  existe deixa as consultas diretas. Um terceiro eixo exigiria mudança de schema —
+  é uma troca consciente.
+
+---
+
+## Endereço preenchido pelo CEP
+
+Digitou os oito dígitos, o resto do endereço aparece. A consulta passa pelo nosso
+servidor (`GET /api/cep/:cep`) em vez de o navegador falar direto com o ViaCEP:
+o IP do cliente não vai para um terceiro, o cache em memória vale para todo mundo,
+e a resposta chega já no formato dos campos do formulário.
+
+Três regras que definem o comportamento:
+
+1. **Dispara sozinho** ao completar o CEP. Pedir um clique a mais para confirmar
+   o que o sistema já sabe fazer é trabalho jogado no cliente.
+2. **Nunca sobrescreve o que a pessoa digitou.** Se ela preencheu a cidade à mão,
+   a busca respeita. Só escreve em campo vazio ou em campo que a própria busca
+   preencheu antes — assim, corrigir um CEP errado atualiza tudo, mas o que é
+   dela permanece dela.
+3. **Falha não trava nada.** Serviço fora do ar, CEP inexistente, sem internet:
+   aparece um aviso e o formulário continua aceitando digitação normal. A busca é
+   conveniência, nunca um bloqueio.
+
+Depois do preenchimento o cursor vai para o campo de endereço, que é onde ainda
+falta digitar o número.
+
+---
+
+## Modo escuro
+
+Três estados: **claro**, **escuro** e **sistema** — com sistema como padrão. A
+maioria das pessoas já configurou a preferência no aparelho; obrigar a escolher de
+novo em cada site é repetir trabalho. As outras duas opções existem para quem quer
+esta loja diferente do resto do sistema.
+
+O que faz a diferença entre um modo escuro que funciona e um que incomoda:
+
+- **Sem flash branco.** Um script inline e síncrono no `index.html` aplica o tema
+  antes da primeira pintura. Deixar isso para o React significa pintar claro por
+  um instante e escurecer depois — exatamente o que machuca os olhos de quem usa
+  tema escuro no escuro.
+- **Contraste verificado, não estimado.** Todos os pares de texto e fundo foram
+  medidos: o mais baixo no modo escuro é 5,38:1, acima do mínimo de 4,5:1 da WCAG
+  para texto normal. A medição também revelou um defeito antigo no modo *claro* —
+  o rótulo de categoria estava em 3,17:1 — que foi corrigido junto.
+- **A hierarquia sobrevive à inversão.** O mapa claro→escuro espelha os tons
+  (fundo 50 → 925, texto 900 → 50) em vez de jogar tudo para um cinza médio, então
+  o que era destaque continua destaque.
+- **`color-scheme` acompanha**, para que barra de rolagem e controles nativos do
+  navegador também fiquem escuros.
+- **"Sistema" acompanha de verdade**: mudar o tema do computador com a loja aberta
+  troca o tema na hora, sem recarregar.
+- **A troca desliza** com uma transição curta de cor — barata, porque cor não
+  remede layout.
+
+---
+
 ## O que não está incluído
 
 Para não haver surpresa sobre o escopo:
 
-- **Variações de produto** (tamanho, cor). Cada produto é um SKU único.
 - **E-mail transacional.** A confirmação de pedido é exibida na tela, não enviada.
 - **Frete calculado por CEP.** A regra é frete fixo com isenção acima de um valor.
 - **Nota fiscal e integração com transportadora.**

@@ -35,10 +35,10 @@ function AuthShell({ title, subtitle, children, footer }: {
       </div>
 
       <div className="mx-auto w-full max-w-sm">
-        <h1 className="text-2xl font-bold tracking-tight text-ink-900">{title}</h1>
-        <p className="mt-1.5 text-sm text-ink-500">{subtitle}</p>
+        <h1 className="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{title}</h1>
+        <p className="mt-1.5 text-sm text-ink-500 dark:text-ink-400">{subtitle}</p>
         {children}
-        <div className="mt-6 text-center text-sm text-ink-500">{footer}</div>
+        <div className="mt-6 text-center text-sm text-ink-500 dark:text-ink-400">{footer}</div>
       </div>
     </div>
   );
@@ -84,7 +84,7 @@ export function LoginPage() {
       footer={
         <>
           Ainda nao tem conta?{' '}
-          <Link to="/criar-conta" className="font-semibold text-brand-600 hover:underline">
+          <Link to="/criar-conta" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
             Criar agora
           </Link>
         </>
@@ -112,15 +112,15 @@ export function LoginPage() {
           />
         </Field>
 
-        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{error}</p>}
+        {error && <p className="rounded-lg bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-sm font-medium text-rose-700 dark:text-rose-300">{error}</p>}
 
         <button type="submit" className="btn-primary h-11 w-full" disabled={busy}>
           {busy ? <Spinner /> : 'Entrar'}
         </button>
       </form>
 
-      <div className="mt-5 rounded-xl bg-ink-100/70 p-3.5 text-xs text-ink-600">
-        <p className="font-semibold text-ink-800">Contas de demonstracao</p>
+      <div className="mt-5 rounded-xl bg-ink-100/70 p-3.5 text-xs text-ink-600 dark:text-ink-300">
+        <p className="font-semibold text-ink-800 dark:text-ink-100">Contas de demonstracao</p>
         <div className="mt-2 space-y-1.5">
           <button
             type="button"
@@ -128,7 +128,7 @@ export function LoginPage() {
               setEmail('cliente@lockimini.dev');
               setPassword('cliente1234');
             }}
-            className="block text-left hover:text-brand-700"
+            className="block text-left hover:text-brand-700 dark:hover:text-brand-400"
           >
             Cliente — cliente@lockimini.dev / cliente1234
           </button>
@@ -138,7 +138,7 @@ export function LoginPage() {
               setEmail('admin@lockimini.dev');
               setPassword('admin1234');
             }}
-            className="block text-left hover:text-brand-700"
+            className="block text-left hover:text-brand-700 dark:hover:text-brand-400"
           >
             Admin — admin@lockimini.dev / admin1234
           </button>
@@ -182,7 +182,7 @@ export function RegisterPage() {
       footer={
         <>
           Ja tem conta?{' '}
-          <Link to="/entrar" className="font-semibold text-brand-600 hover:underline">
+          <Link to="/entrar" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
             Entrar
           </Link>
         </>
@@ -229,7 +229,7 @@ export function RegisterPage() {
           />
         </Field>
 
-        {error && <p className="rounded-lg bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">{error}</p>}
+        {error && <p className="rounded-lg bg-rose-50 dark:bg-rose-950/40 px-3 py-2 text-sm font-medium text-rose-700 dark:text-rose-300">{error}</p>}
 
         <button type="submit" className="btn-primary h-11 w-full" disabled={busy}>
           {busy ? <Spinner /> : 'Criar conta'}
@@ -247,9 +247,9 @@ export function OrderLookupPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-20">
       <div className="card p-6">
-        <PackageSearch className="h-8 w-8 text-brand-600" />
-        <h1 className="mt-4 text-xl font-bold text-ink-900">Rastrear pedido</h1>
-        <p className="mt-1.5 text-sm text-ink-500">
+        <PackageSearch className="h-8 w-8 text-brand-600 dark:text-brand-400" />
+        <h1 className="mt-4 text-xl font-bold text-ink-900 dark:text-ink-50">Rastrear pedido</h1>
+        <p className="mt-1.5 text-sm text-ink-500 dark:text-ink-400">
           Comprou sem criar conta? Informe o numero do pedido e o e-mail usado na compra.
         </p>
         <form

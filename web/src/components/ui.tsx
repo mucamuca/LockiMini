@@ -19,8 +19,8 @@ export function PageHeading({
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">{title}</h1>
-        {subtitle && <p className="mt-1.5 text-sm text-ink-500">{subtitle}</p>}
+        <h1 className="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-3xl">{title}</h1>
+        {subtitle && <p className="mt-1.5 text-sm text-ink-500 dark:text-ink-400">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
     </div>
@@ -50,7 +50,7 @@ export function Field({
     <label className={`block ${className}`}>
       <span className="label">{label}</span>
       {children}
-      {hint && !error && <span className="mt-1.5 block text-xs text-ink-500">{hint}</span>}
+      {hint && !error && <span className="mt-1.5 block text-xs text-ink-500 dark:text-ink-400">{hint}</span>}
       {error && <span className="field-error block">{error}</span>}
     </label>
   );
@@ -68,10 +68,10 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-ink-200 bg-white/60 px-6 py-16 text-center">
+    <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-ink-200 dark:border-ink-700 bg-white/60 px-6 py-16 text-center">
       {icon && <div className="mb-4 text-ink-300">{icon}</div>}
-      <p className="text-base font-semibold text-ink-800">{title}</p>
-      {message && <p className="mt-1.5 max-w-sm text-sm text-ink-500">{message}</p>}
+      <p className="text-base font-semibold text-ink-800 dark:text-ink-100">{title}</p>
+      {message && <p className="mt-1.5 max-w-sm text-sm text-ink-500 dark:text-ink-400">{message}</p>}
       {action && <div className="mt-5">{action}</div>}
     </div>
   );
@@ -118,7 +118,7 @@ export function Pagination({
           onClick={() => onChange(p)}
           aria-current={p === page ? 'page' : undefined}
           className={`h-9 min-w-9 rounded-xl px-3 text-sm font-semibold transition ${
-            p === page ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-100'
+            p === page ? 'bg-ink-900 text-white' : 'text-ink-600 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-800'
           }`}
         >
           {p}

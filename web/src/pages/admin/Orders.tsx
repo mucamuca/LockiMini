@@ -57,7 +57,7 @@ export function AdminOrders() {
                 setParams(next, { replace: true });
               }}
               className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
-                status === s ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-100'
+                status === s ? 'bg-ink-900 text-white' : 'text-ink-600 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-800'
               }`}
             >
               {s === 'all' ? 'Todos' : ORDER_STATUS[s].label}
@@ -85,26 +85,26 @@ export function AdminOrders() {
                   <th className="px-4 py-3 text-right font-semibold">Total</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink-100">
+              <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
                 {orders.map((order) => (
                   <tr key={order.id} className="cursor-pointer hover:bg-ink-50/60">
                     <td className="px-4 py-3">
                       <Link
                         to={`/admin/pedidos/${order.id}`}
-                        className="font-mono text-xs font-semibold text-ink-900 hover:text-brand-700"
+                        className="font-mono text-xs font-semibold text-ink-900 dark:text-ink-50 hover:text-brand-700 dark:hover:text-brand-400"
                       >
                         {order.number}
                       </Link>
                       <p className="text-xs text-ink-400">{relativeTime(order.createdAt)}</p>
                     </td>
-                    <td className="px-4 py-3 text-ink-600">{order.email}</td>
-                    <td className="px-4 py-3 text-ink-600">
+                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{order.email}</td>
+                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">
                       {order.payment ? PAYMENT_METHOD_LABEL[order.payment.method] : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge status={order.status} />
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-ink-900">
+                    <td className="px-4 py-3 text-right font-semibold text-ink-900 dark:text-ink-50">
                       {money(order.totalCents)}
                     </td>
                   </tr>
@@ -184,29 +184,29 @@ export function AdminOrderDetail() {
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
           <section className="card p-6">
-            <h2 className="text-base font-bold text-ink-900">Itens</h2>
-            <ul className="mt-4 divide-y divide-ink-100">
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Itens</h2>
+            <ul className="mt-4 divide-y divide-ink-100 dark:divide-ink-800">
               {order.items.map((item) => (
                 <li key={item.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
                   <img src={item.imageUrl ?? ''} alt="" className="h-14 w-14 rounded-lg object-cover"
   decoding="async"
   loading="lazy"/>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-ink-900">{item.name}</p>
+                    <p className="truncate text-sm font-medium text-ink-900 dark:text-ink-50">{item.name}</p>
                     <p className="font-mono text-xs text-ink-400">{item.sku}</p>
                   </div>
-                  <span className="text-sm text-ink-500">
+                  <span className="text-sm text-ink-500 dark:text-ink-400">
                     {item.quantity} x {money(item.unitPriceCents)}
                   </span>
-                  <span className="w-24 text-right text-sm font-bold text-ink-900">
+                  <span className="w-24 text-right text-sm font-bold text-ink-900 dark:text-ink-50">
                     {money(item.totalCents)}
                   </span>
                 </li>
               ))}
             </ul>
 
-            <dl className="mt-5 space-y-1.5 border-t border-ink-100 pt-4 text-sm">
-              <div className="flex justify-between text-ink-600">
+            <dl className="mt-5 space-y-1.5 border-t border-ink-100 dark:border-ink-800 pt-4 text-sm">
+              <div className="flex justify-between text-ink-600 dark:text-ink-300">
                 <dt>Subtotal</dt>
                 <dd>{money(order.subtotalCents)}</dd>
               </div>
@@ -216,11 +216,11 @@ export function AdminOrderDetail() {
                   <dd>-{money(order.discountCents)}</dd>
                 </div>
               )}
-              <div className="flex justify-between text-ink-600">
+              <div className="flex justify-between text-ink-600 dark:text-ink-300">
                 <dt>Frete</dt>
                 <dd>{order.shippingCents === 0 ? 'Gratis' : money(order.shippingCents)}</dd>
               </div>
-              <div className="flex justify-between pt-2 text-base font-bold text-ink-900">
+              <div className="flex justify-between pt-2 text-base font-bold text-ink-900 dark:text-ink-50">
                 <dt>Total</dt>
                 <dd>{money(order.totalCents)}</dd>
               </div>
@@ -229,22 +229,22 @@ export function AdminOrderDetail() {
 
           {order.reservations.length > 0 && (
             <section className="card p-6">
-              <h2 className="text-base font-bold text-ink-900">Reservas de estoque</h2>
-              <p className="mt-1 text-sm text-ink-500">
+              <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Reservas de estoque</h2>
+              <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">
                 Unidades separadas para este pedido. Enquanto estao ativas, ninguem mais consegue compra-las.
               </p>
               <ul className="mt-4 space-y-2">
                 {order.reservations.map((r) => (
                   <li
                     key={r.id}
-                    className="flex items-center justify-between rounded-lg border border-ink-100 px-3 py-2 text-sm"
+                    className="flex items-center justify-between rounded-lg border border-ink-100 dark:border-ink-800 px-3 py-2 text-sm"
                   >
                     <div>
-                      <p className="font-medium text-ink-900">{r.product.name}</p>
+                      <p className="font-medium text-ink-900 dark:text-ink-50">{r.product.name}</p>
                       <p className="font-mono text-xs text-ink-400">{r.product.sku}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-ink-900">{r.quantity} un.</p>
+                      <p className="font-semibold text-ink-900 dark:text-ink-50">{r.quantity} un.</p>
                       <p className="text-xs text-ink-400">
                         {r.status === 'ACTIVE'
                           ? `expira ${relativeTime(r.expiresAt)}`
@@ -262,9 +262,9 @@ export function AdminOrderDetail() {
 
         <aside className="space-y-6">
           <div className="card p-5">
-            <h2 className="text-sm font-bold text-ink-900">Mudar status</h2>
+            <h2 className="text-sm font-bold text-ink-900 dark:text-ink-50">Mudar status</h2>
             {NEXT_STATUS[order.status].length === 0 ? (
-              <p className="mt-3 text-sm text-ink-500">
+              <p className="mt-3 text-sm text-ink-500 dark:text-ink-400">
                 Este pedido chegou a um estado final e nao aceita novas transicoes.
               </p>
             ) : (
@@ -286,7 +286,7 @@ export function AdminOrderDetail() {
                     }}
                     disabled={changeStatus.isPending}
                     className={
-                      next === 'CANCELLED' || next === 'REFUNDED' ? 'btn-outline text-rose-600' : 'btn-primary'
+                      next === 'CANCELLED' || next === 'REFUNDED' ? 'btn-outline text-rose-600 dark:text-rose-400' : 'btn-primary'
                     }
                   >
                     {changeStatus.isPending ? <Spinner /> : ORDER_STATUS[next].label}
@@ -297,48 +297,48 @@ export function AdminOrderDetail() {
           </div>
 
           <div className="card p-5">
-            <h2 className="text-sm font-bold text-ink-900">Cliente</h2>
-            <p className="mt-3 text-sm font-medium text-ink-900">
+            <h2 className="text-sm font-bold text-ink-900 dark:text-ink-50">Cliente</h2>
+            <p className="mt-3 text-sm font-medium text-ink-900 dark:text-ink-50">
               {order.customer?.name ?? 'Compra sem cadastro'}
             </p>
-            <p className="text-sm text-ink-500">{order.email}</p>
+            <p className="text-sm text-ink-500 dark:text-ink-400">{order.email}</p>
           </div>
 
           <div className="card p-5">
-            <h2 className="text-sm font-bold text-ink-900">Pagamento</h2>
+            <h2 className="text-sm font-bold text-ink-900 dark:text-ink-50">Pagamento</h2>
             {order.payment ? (
               <dl className="mt-3 space-y-1.5 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-ink-500">Metodo</dt>
-                  <dd className="font-medium text-ink-900">
+                  <dt className="text-ink-500 dark:text-ink-400">Metodo</dt>
+                  <dd className="font-medium text-ink-900 dark:text-ink-50">
                     {PAYMENT_METHOD_LABEL[order.payment.method]}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-500">Provedor</dt>
-                  <dd className="font-medium text-ink-900">{order.payment.provider}</dd>
+                  <dt className="text-ink-500 dark:text-ink-400">Provedor</dt>
+                  <dd className="font-medium text-ink-900 dark:text-ink-50">{order.payment.provider}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-ink-500">Situacao</dt>
-                  <dd className="font-medium text-ink-900">{order.payment.status}</dd>
+                  <dt className="text-ink-500 dark:text-ink-400">Situacao</dt>
+                  <dd className="font-medium text-ink-900 dark:text-ink-50">{order.payment.status}</dd>
                 </div>
                 {order.payment.failureCode && (
                   <div className="flex justify-between">
-                    <dt className="text-ink-500">Motivo</dt>
-                    <dd className="font-medium text-rose-600">{order.payment.failureCode}</dd>
+                    <dt className="text-ink-500 dark:text-ink-400">Motivo</dt>
+                    <dd className="font-medium text-rose-600 dark:text-rose-400">{order.payment.failureCode}</dd>
                   </div>
                 )}
               </dl>
             ) : (
-              <p className="mt-3 text-sm text-ink-500">Sem registro de pagamento.</p>
+              <p className="mt-3 text-sm text-ink-500 dark:text-ink-400">Sem registro de pagamento.</p>
             )}
           </div>
 
           {address && (
             <div className="card p-5">
-              <h2 className="text-sm font-bold text-ink-900">Entrega</h2>
-              <address className="mt-3 text-sm not-italic leading-relaxed text-ink-600">
-                <strong className="block text-ink-900">{address.recipient}</strong>
+              <h2 className="text-sm font-bold text-ink-900 dark:text-ink-50">Entrega</h2>
+              <address className="mt-3 text-sm not-italic leading-relaxed text-ink-600 dark:text-ink-300">
+                <strong className="block text-ink-900 dark:text-ink-50">{address.recipient}</strong>
                 {address.line1}
                 {address.line2 ? `, ${address.line2}` : ''}
                 <br />
@@ -357,8 +357,8 @@ export function AdminOrderDetail() {
 
           {order.notes && (
             <div className="card p-5">
-              <h2 className="text-sm font-bold text-ink-900">Observacoes</h2>
-              <p className="mt-2 text-sm text-ink-600">{order.notes}</p>
+              <h2 className="text-sm font-bold text-ink-900 dark:text-ink-50">Observacoes</h2>
+              <p className="mt-2 text-sm text-ink-600 dark:text-ink-300">{order.notes}</p>
             </div>
           )}
         </aside>

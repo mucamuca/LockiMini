@@ -72,8 +72,8 @@ function NotFound() {
   return (
     <div className="mx-auto max-w-md px-4 py-24 text-center">
       <p className="animate-fade-up text-6xl font-extrabold tracking-tight text-ink-200">404</p>
-      <h1 className="mt-4 text-xl font-bold text-ink-900">Pagina nao encontrada</h1>
-      <p className="mt-2 text-sm text-ink-500">O endereco acessado nao existe ou foi movido.</p>
+      <h1 className="mt-4 text-xl font-bold text-ink-900 dark:text-ink-50">Pagina nao encontrada</h1>
+      <p className="mt-2 text-sm text-ink-500 dark:text-ink-400">O endereco acessado nao existe ou foi movido.</p>
       <Link to="/" className="btn-primary mt-6">
         Voltar ao inicio
       </Link>

@@ -26,6 +26,25 @@ export type Address = {
 
 export type StockInfo = { available: number; lowStock: boolean; outOfStock: boolean };
 
+/** Uma combinacao vendavel: "Preto / M". O preco ja vem resolvido pelo servidor. */
+export type ProductVariant = {
+  id: string;
+  sku: string;
+  label: string;
+  colorName: string | null;
+  colorHex: string | null;
+  sizeName: string | null;
+  priceCents: number;
+  imageUrl: string | null;
+  stock: StockInfo & { quantity: number; reserved: number };
+};
+
+/** Os eixos que o produto usa — a tela monta um seletor por eixo presente. */
+export type ProductOptions = {
+  colors: { name: string; hex: string | null }[];
+  sizes: string[];
+};
+
 export type Product = {
   id: string;
   sku: string;
@@ -40,6 +59,11 @@ export type Product = {
   active: boolean;
   category: { id: string; name: string; slug: string } | null;
   stock: StockInfo;
+  /** Vazio quando o produto nao tem variacoes. */
+  variants: ProductVariant[];
+  options: ProductOptions;
+  /** Menor preco entre as variacoes — o "a partir de" da vitrine. */
+  fromPriceCents: number;
   createdAt: string;
 };
 
@@ -66,6 +90,8 @@ export type Category = {
 export type CartItem = {
   id: string;
   productId: string;
+  variantId: string | null;
+  variantLabel: string | null;
   name: string;
   slug: string;
   sku: string;
@@ -138,6 +164,8 @@ export type Order = {
     productId: string | null;
     name: string;
     sku: string;
+    variantId: string | null;
+    variantLabel: string | null;
     imageUrl: string | null;
     unitPriceCents: number;
     quantity: number;
@@ -148,6 +176,9 @@ export type Order = {
 
 export type StockEvent = {
   productId: string;
+  /** "" = evento agregado do produto; preenchido = uma combinacao especifica. */
+  variantId: string;
+  variantLabel: string | null;
   sku: string;
   available: number;
   quantity: number;
@@ -193,6 +224,9 @@ export type DashboardData = {
 
 export type StockRow = {
   productId: string;
+  variantId: string | null;
+  variantLabel: string | null;
+  colorHex: string | null;
   name: string;
   sku: string;
   imageUrl: string | null;

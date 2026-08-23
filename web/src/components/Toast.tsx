@@ -36,10 +36,10 @@ export function useToast() {
 }
 
 const STYLES: Record<Variant, { icon: typeof Info; ring: string; iconColor: string }> = {
-  success: { icon: CheckCircle2, ring: 'ring-emerald-200', iconColor: 'text-emerald-600' },
-  error: { icon: XCircle, ring: 'ring-rose-200', iconColor: 'text-rose-600' },
-  warning: { icon: AlertTriangle, ring: 'ring-amber-200', iconColor: 'text-amber-600' },
-  info: { icon: Info, ring: 'ring-brand-200', iconColor: 'text-brand-600' },
+  success: { icon: CheckCircle2, ring: 'ring-emerald-200 dark:ring-emerald-800', iconColor: 'text-emerald-600' },
+  error: { icon: XCircle, ring: 'ring-rose-200 dark:ring-rose-800', iconColor: 'text-rose-600 dark:text-rose-400' },
+  warning: { icon: AlertTriangle, ring: 'ring-amber-200 dark:ring-amber-800', iconColor: 'text-amber-600' },
+  info: { icon: Info, ring: 'ring-brand-200', iconColor: 'text-brand-600 dark:text-brand-400' },
 };
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -90,17 +90,17 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }
 
   return (
     <div
-      className={`pointer-events-auto flex animate-fade-up items-start gap-3 rounded-xl bg-white p-3.5 shadow-lift ring-1 ${ring}`}
+      className={`pointer-events-auto flex animate-fade-up items-start gap-3 rounded-xl bg-white dark:bg-ink-900 p-3.5 shadow-lift ring-1 ${ring}`}
       role="status"
     >
       <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${iconColor}`} aria-hidden />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink-900">{toast.title}</p>
-        {toast.message && <p className="mt-0.5 text-sm leading-snug text-ink-600">{toast.message}</p>}
+        <p className="text-sm font-semibold text-ink-900 dark:text-ink-50">{toast.title}</p>
+        {toast.message && <p className="mt-0.5 text-sm leading-snug text-ink-600 dark:text-ink-300">{toast.message}</p>}
       </div>
       <button
         onClick={onDismiss}
-        className="rounded-lg p-1 text-ink-400 transition hover:bg-ink-100 hover:text-ink-700"
+        className="rounded-lg p-1 text-ink-400 transition hover:bg-ink-100 dark:hover:bg-ink-800 hover:text-ink-700"
         aria-label="Fechar aviso"
       >
         <X className="h-4 w-4" />

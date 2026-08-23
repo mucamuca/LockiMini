@@ -16,6 +16,7 @@ import { useAuth } from '../store/auth';
 import { useCart } from '../hooks/useCart';
 import { useRealtime } from './RealtimeProvider';
 import { CartDrawer } from './CartDrawer';
+import { ThemeToggle } from './ThemeToggle';
 
 const NAV = [
   { to: '/catalogo', label: 'Catalogo' },
@@ -105,8 +106,8 @@ export function Layout() {
         rolagem, e era um dos motivos de a pagina "arrastar".
       */}
       <header
-        className={`sticky top-0 z-40 border-b bg-white transition-shadow duration-200 ${
-          scrolled ? 'border-ink-100 shadow-card' : 'border-transparent'
+        className={`sticky top-0 z-40 border-b bg-white dark:bg-ink-900 transition-shadow duration-200 ${
+          scrolled ? 'border-ink-100 dark:border-ink-800 shadow-card' : 'border-transparent'
         }`}
       >
         <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4">
@@ -132,7 +133,7 @@ export function Layout() {
                 to={item.to}
                 className={({ isActive }) =>
                   `nav-link rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    isActive ? 'text-brand-700' : 'text-ink-600 hover:text-ink-900'
+                    isActive ? 'text-brand-700 dark:text-brand-400' : 'text-ink-600 dark:text-ink-300 hover:text-ink-900 dark:hover:text-white'
                   }`
                 }
               >
@@ -155,6 +156,8 @@ export function Layout() {
           </form>
 
           <div className="ml-auto flex items-center gap-1 md:ml-0">
+            <ThemeToggle />
+
             {isAdmin && (
               <Link
                 to="/admin"
@@ -172,24 +175,24 @@ export function Layout() {
                 </button>
                 <div className="invisible absolute right-0 top-full w-52 translate-y-1 pt-2 opacity-0 transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
                   <div className="card overflow-hidden py-1">
-                    <p className="truncate px-3 py-2 text-xs text-ink-500">{user.email}</p>
+                    <p className="truncate px-3 py-2 text-xs text-ink-500 dark:text-ink-400">{user.email}</p>
                     <Link
                       to="/conta"
-                      className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-ink-50"
+                      className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-ink-50 dark:hover:bg-ink-850"
                     >
                       <Package className="h-4 w-4" /> Meus pedidos
                     </Link>
                     {isAdmin && (
                       <Link
                         to="/admin"
-                        className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-ink-50"
+                        className="flex items-center gap-2 px-3 py-2 text-sm transition-colors hover:bg-ink-50 dark:hover:bg-ink-850"
                       >
                         <LayoutDashboard className="h-4 w-4" /> Painel admin
                       </Link>
                     )}
                     <button
                       onClick={() => logout().then(() => navigate('/'))}
-                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-600 transition-colors hover:bg-rose-50"
+                      className="flex w-full items-center gap-2 px-3 py-2 text-sm text-rose-600 dark:text-rose-400 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40"
                     >
                       <LogOut className="h-4 w-4" /> Sair
                     </button>
@@ -204,7 +207,7 @@ export function Layout() {
 
             <button
               onClick={() => setCartOpen(true)}
-              className="relative rounded-xl px-2.5 py-2 text-ink-700 transition-colors hover:bg-ink-100"
+              className="relative rounded-xl px-2.5 py-2 text-ink-700 dark:text-ink-200 transition-colors hover:bg-ink-100 dark:hover:bg-ink-800"
               aria-label={`Carrinho com ${itemCount} itens`}
             >
               <ShoppingBag className="h-5 w-5" />
@@ -222,7 +225,7 @@ export function Layout() {
         </div>
 
         {menuOpen && (
-          <div className="animate-fade-up border-t border-ink-100 bg-white px-4 py-3 lg:hidden">
+          <div className="animate-fade-up border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 px-4 py-3 lg:hidden">
             <form onSubmit={submitSearch} className="mb-3 md:hidden">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
@@ -240,7 +243,7 @@ export function Layout() {
                   key={item.label}
                   to={item.to}
                   onClick={() => setMenuOpen(false)}
-                  className="rounded-lg px-3 py-2 text-sm font-medium text-ink-700 transition-colors hover:bg-ink-50"
+                  className="rounded-lg px-3 py-2 text-sm font-medium text-ink-700 dark:text-ink-200 transition-colors hover:bg-ink-50 dark:hover:bg-ink-850"
                 >
                   {item.label}
                 </Link>
@@ -255,7 +258,7 @@ export function Layout() {
         <Outlet />
       </main>
 
-      <footer className="mt-16 border-t border-ink-100 bg-white">
+      <footer className="mt-16 border-t border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <div className="flex items-center gap-2 font-extrabold">
@@ -264,60 +267,60 @@ export function Layout() {
               </span>
               LockiMini
             </div>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-500">
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-ink-500 dark:text-ink-400">
               Loja de demonstracao com catalogo, checkout, pagamentos e controle de estoque em tempo real.
             </p>
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wide text-ink-900">Loja</h3>
-            <ul className="mt-3 space-y-2 text-sm text-ink-500">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-ink-900 dark:text-ink-50">Loja</h3>
+            <ul className="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-400">
               <li>
-                <Link to="/catalogo" className="transition-colors hover:text-ink-900">
+                <Link to="/catalogo" className="transition-colors hover:text-ink-900 dark:hover:text-white">
                   Todos os produtos
                 </Link>
               </li>
               <li>
-                <Link to="/catalogo?featured=true" className="transition-colors hover:text-ink-900">
+                <Link to="/catalogo?featured=true" className="transition-colors hover:text-ink-900 dark:hover:text-white">
                   Destaques
                 </Link>
               </li>
               <li>
-                <Link to="/carrinho" className="transition-colors hover:text-ink-900">
+                <Link to="/carrinho" className="transition-colors hover:text-ink-900 dark:hover:text-white">
                   Carrinho
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wide text-ink-900">Conta</h3>
-            <ul className="mt-3 space-y-2 text-sm text-ink-500">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-ink-900 dark:text-ink-50">Conta</h3>
+            <ul className="mt-3 space-y-2 text-sm text-ink-500 dark:text-ink-400">
               <li>
-                <Link to="/entrar" className="transition-colors hover:text-ink-900">
+                <Link to="/entrar" className="transition-colors hover:text-ink-900 dark:hover:text-white">
                   Entrar
                 </Link>
               </li>
               <li>
-                <Link to="/criar-conta" className="transition-colors hover:text-ink-900">
+                <Link to="/criar-conta" className="transition-colors hover:text-ink-900 dark:hover:text-white">
                   Criar conta
                 </Link>
               </li>
               <li>
-                <Link to="/rastrear" className="transition-colors hover:text-ink-900">
+                <Link to="/rastrear" className="transition-colors hover:text-ink-900 dark:hover:text-white">
                   Rastrear pedido
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wide text-ink-900">Contas de teste</h3>
-            <ul className="mt-3 space-y-1.5 font-mono text-xs text-ink-500">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-ink-900 dark:text-ink-50">Contas de teste</h3>
+            <ul className="mt-3 space-y-1.5 font-mono text-xs text-ink-500 dark:text-ink-400">
               <li>admin@lockimini.dev / admin1234</li>
               <li>cliente@lockimini.dev / cliente1234</li>
               <li className="pt-2 font-sans">Cartao aprovado: 4242 4242 4242 4242</li>
             </ul>
           </div>
         </div>
-        <div className="border-t border-ink-100 px-4 py-5 text-center text-xs text-ink-400">
+        <div className="border-t border-ink-100 dark:border-ink-800 px-4 py-5 text-center text-xs text-ink-400">
           Projeto de demonstracao — nenhuma cobranca real e processada.
         </div>
       </footer>

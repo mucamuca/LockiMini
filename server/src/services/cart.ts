@@ -4,6 +4,7 @@ import { prisma, withWriteRetry } from '../db.js';
 import { env } from '../env.js';
 import { CART_COOKIE, setCartCookie } from '../lib/tokens.js';
 import { availableOf } from './stock.js';
+import { NO_VARIANT, resolveVariant, stockOfVariant, variantLabel, variantPrice } from './variants.js';
 import { parseImages } from './serializers.js';
 import { conflict, notFound } from '../http/errors.js';
 
@@ -57,16 +58,29 @@ async function mergeCarts(fromCartId: string, intoCartId: string) {
   if (!items) return;
   for (const item of items.items) {
     const existing = await prisma.cartItem.findUnique({
-      where: { cartId_productId: { cartId: intoCartId, productId: item.productId } },
+      where: {
+        cartId_productId_variantId: {
+          cartId: intoCartId,
+          productId: item.productId,
+          variantId: item.variantId,
+        },
+      },
     });
-    const inventory = await prisma.inventory.findUnique({ where: { productId: item.productId } });
+    const inventory = await prisma.inventory.findUnique({
+      where: { productId_variantId: { productId: item.productId, variantId: item.variantId } },
+    });
     const cap = availableOf(inventory);
     const merged = Math.min((existing?.quantity ?? 0) + item.quantity, Math.max(cap, 1));
     if (existing) {
       await prisma.cartItem.update({ where: { id: existing.id }, data: { quantity: merged } });
     } else {
       await prisma.cartItem.create({
-        data: { cartId: intoCartId, productId: item.productId, quantity: merged },
+        data: {
+          cartId: intoCartId,
+          productId: item.productId,
+          variantId: item.variantId,
+          quantity: merged,
+        },
       });
     }
   }
@@ -82,26 +96,43 @@ export type CartView = Awaited<ReturnType<typeof getCartView>>;
 export async function getCartView(cartId: string) {
   const cart = await prisma.cart.findUnique({
     where: { id: cartId },
-    include: { items: { include: { product: { include: { inventory: true } } }, orderBy: { createdAt: 'asc' } } },
+    include: {
+      items: {
+        include: { product: { include: { inventory: true, variants: true } } },
+        orderBy: { createdAt: 'asc' },
+      },
+    },
   });
   if (!cart) throw notFound('Carrinho nao encontrado.');
 
   const items = cart.items.map((item) => {
-    const available = availableOf(item.product.inventory);
-    const unavailable = !item.product.active || available <= 0;
+    const variant = item.variantId
+      ? item.product.variants.find((v) => v.id === item.variantId)
+      : undefined;
+
+    // O estoque conferido e o da variacao escolhida — nao o do produto inteiro.
+    const available = stockOfVariant(item.product.inventory, item.variantId).available;
+    const variantGone = Boolean(item.variantId) && (!variant || !variant.active);
+    const unavailable = !item.product.active || variantGone || available <= 0;
     const overBooked = !unavailable && item.quantity > available;
+    const unitPriceCents = variantPrice(item.product, variant);
+
     return {
       id: item.id,
       productId: item.productId,
+      variantId: item.variantId || null,
+      variantLabel: variant ? variantLabel(variant) : null,
       name: item.product.name,
       slug: item.product.slug,
-      sku: item.product.sku,
-      imageUrl: parseImages(item.product.images)[0] ?? null,
-      unitPriceCents: item.product.priceCents,
+      sku: variant?.sku ?? item.product.sku,
+      imageUrl: variant?.imageUrl ?? parseImages(item.product.images)[0] ?? null,
+      unitPriceCents,
       quantity: item.quantity,
-      totalCents: item.product.priceCents * item.quantity,
+      totalCents: unitPriceCents * item.quantity,
       stock: { available, unavailable, overBooked },
-      issue: unavailable
+      issue: variantGone
+        ? 'Esta variacao saiu de linha.'
+        : unavailable
         ? 'Produto indisponivel no momento.'
         : overBooked
           ? `Restam apenas ${available} un. em estoque.`
@@ -133,36 +164,52 @@ export async function getCartView(cartId: string) {
   };
 }
 
-export async function addToCart(cartId: string, productId: string, quantity: number) {
-  return withWriteRetry(() => addToCartOnce(cartId, productId, quantity));
+export async function addToCart(
+  cartId: string,
+  productId: string,
+  quantity: number,
+  variantId?: string | null,
+) {
+  return withWriteRetry(() => addToCartOnce(cartId, productId, quantity, variantId));
 }
 
-async function addToCartOnce(cartId: string, productId: string, quantity: number) {
+async function addToCartOnce(
+  cartId: string,
+  productId: string,
+  quantity: number,
+  requestedVariant?: string | null,
+) {
   const product = await prisma.product.findUnique({
     where: { id: productId },
     include: { inventory: true },
   });
   if (!product || !product.active) throw notFound('Produto indisponivel.');
 
-  const available = availableOf(product.inventory);
+  // Produto com variacoes exige escolha; sem variacoes, recusa uma escolha.
+  const { variantId, variant } = await resolveVariant(productId, requestedVariant);
+
+  const { available } = stockOfVariant(product.inventory, variantId);
   const existing = await prisma.cartItem.findUnique({
-    where: { cartId_productId: { cartId, productId } },
+    where: { cartId_productId_variantId: { cartId, productId, variantId } },
   });
   const desired = (existing?.quantity ?? 0) + quantity;
+  const label = variant ? ` (${variantLabel(variant)})` : '';
 
-  if (available <= 0) throw conflict('Produto esgotado.', 'out_of_stock', { productId, available });
+  if (available <= 0) {
+    throw conflict(`Produto esgotado${label}.`, 'out_of_stock', { productId, variantId, available });
+  }
   if (desired > available) {
     throw conflict(
-      `So temos ${available} un. de "${product.name}" disponiveis.`,
+      `So temos ${available} un. de "${product.name}"${label} disponiveis.`,
       'insufficient_stock',
-      { productId, requested: desired, available },
+      { productId, variantId, requested: desired, available },
     );
   }
 
   if (existing) {
     await prisma.cartItem.update({ where: { id: existing.id }, data: { quantity: desired } });
   } else {
-    await prisma.cartItem.create({ data: { cartId, productId, quantity } });
+    await prisma.cartItem.create({ data: { cartId, productId, variantId, quantity } });
   }
   return getCartView(cartId);
 }
@@ -183,10 +230,11 @@ async function updateCartItemOnce(cartId: string, itemId: string, quantity: numb
     return getCartView(cartId);
   }
 
-  const available = availableOf(item.product.inventory);
+  const { available } = stockOfVariant(item.product.inventory, item.variantId);
   if (quantity > available) {
     throw conflict(`So temos ${available} un. disponiveis.`, 'insufficient_stock', {
       productId: item.productId,
+      variantId: item.variantId || null,
       requested: quantity,
       available,
     });

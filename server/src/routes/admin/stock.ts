@@ -5,6 +5,7 @@ import { asyncHandler } from '../../lib/async.js';
 import { q, validate } from '../../middleware/validate.js';
 import { adjustStock, expireStaleReservations, setStockQuantity } from '../../services/stock.js';
 import { parseImages } from '../../services/serializers.js';
+import { variantLabel } from '../../services/variants.js';
 
 export const adminStockRouter = Router();
 
@@ -25,19 +26,34 @@ adminStockRouter.get(
       take: 300,
     });
 
-    let items = rows.map((r) => ({
+    // A tabela ja lista uma linha por variacao (Inventory e por combinacao);
+    // aqui so buscamos os rotulos para o operador saber qual e qual.
+    const variantIds = rows.map((r) => r.variantId).filter(Boolean);
+    const variants = await prisma.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      select: { id: true, sku: true, colorName: true, colorHex: true, sizeName: true, priceCents: true },
+    });
+    const byId = new Map(variants.map((v) => [v.id, v]));
+
+    let items = rows.map((r) => {
+      const v = r.variantId ? byId.get(r.variantId) : undefined;
+      return {
       productId: r.productId,
+      variantId: r.variantId || null,
+      variantLabel: v ? variantLabel(v) : null,
+      colorHex: v?.colorHex ?? null,
       name: r.product.name,
-      sku: r.product.sku,
+      sku: v?.sku ?? r.product.sku,
       imageUrl: parseImages(r.product.images)[0] ?? null,
       active: r.product.active,
-      priceCents: r.product.priceCents,
+      priceCents: v?.priceCents ?? r.product.priceCents,
       quantity: r.quantity,
       reserved: r.reserved,
       available: Math.max(0, r.quantity - r.reserved),
       lowStockThreshold: r.lowStockThreshold,
       updatedAt: r.updatedAt,
-    }));
+      };
+    });
 
     if (search) {
       const needle = search.toLowerCase();
@@ -65,6 +81,8 @@ adminStockRouter.get(
 );
 
 const adjustSchema = z.object({
+  /** Vazio/ausente = produto sem variacao. */
+  variantId: z.string().optional(),
   delta: z.coerce.number().int().refine((n) => n !== 0, 'Informe uma quantidade diferente de zero.'),
   reason: z.enum(['PURCHASE_ORDER', 'MANUAL_ADJUSTMENT', 'LOSS', 'RETURN']).default('MANUAL_ADJUSTMENT'),
   note: z.string().max(200).optional(),
@@ -75,9 +93,10 @@ adminStockRouter.post(
   '/:productId/adjust',
   validate(adjustSchema),
   asyncHandler(async (req, res) => {
-    const { delta, reason, note } = req.body as z.infer<typeof adjustSchema>;
+    const { delta, reason, note, variantId } = req.body as z.infer<typeof adjustSchema>;
     const stock = await adjustStock({
       productId: req.params.productId,
+      variantId,
       delta,
       reason,
       note,
@@ -90,10 +109,20 @@ adminStockRouter.post(
 /** Contagem de inventario: define o valor absoluto. */
 adminStockRouter.post(
   '/:productId/set',
-  validate(z.object({ quantity: z.coerce.number().int().min(0), note: z.string().max(200).optional() })),
+  validate(
+    z.object({
+      quantity: z.coerce.number().int().min(0),
+      note: z.string().max(200).optional(),
+      variantId: z.string().optional(),
+    }),
+  ),
   asyncHandler(async (req, res) => {
-    const { quantity, note } = req.body as { quantity: number; note?: string };
-    const stock = await setStockQuantity(req.params.productId, quantity, req.user!.sub, note);
+    const { quantity, note, variantId } = req.body as {
+      quantity: number;
+      note?: string;
+      variantId?: string;
+    };
+    const stock = await setStockQuantity(req.params.productId, quantity, req.user!.sub, note, variantId);
     res.json({ stock });
   }),
 );

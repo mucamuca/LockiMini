@@ -91,7 +91,8 @@ model Product {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  inventory    Inventory?
+  variants     ProductVariant[]
+  inventory    Inventory[]
   cartItems    CartItem[]
   orderItems   OrderItem[]
   movements    StockMovement[]
@@ -101,17 +102,59 @@ model Product {
   @@index([active])
 }
 
+/// Uma combinacao vendavel do produto: "Preto / M", "Titanio / 512 GB".
+///
+/// Os dois eixos sao colunas explicitas em vez de uma tabela generica de
+/// atributos. A loja vende cor e tamanho; modelar so o que existe deixa as
+/// consultas diretas e o codigo legivel. Um terceiro eixo exigiria mudanca de
+/// schema — e uma troca consciente.
+model ProductVariant {
+  id         String  @id @default(cuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku        String  @unique
+  /// Nulo quando o produto nao varia neste eixo.
+  colorName  String?
+  colorHex   String?
+  sizeName   String?
+  /// Sobrepoe o preco do produto quando presente (ex.: 512 GB custa mais).
+  priceCents Int?
+  imageUrl   String?
+  position   Int     @default(0)
+  active     Boolean @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([productId, colorName, sizeName])
+  @@index([productId])
+}
+
 /// Fonte unica de verdade do estoque.
 /// disponivel = quantity - reserved. Toda mutacao passa por SQL atomico
 /// com guarda (ver services/stock.ts), entao concorrencia nao gera oversell.
 model Inventory {
   id                String   @id @default(cuid())
-  productId         String   @unique
+  productId         String
   product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// String vazia = produto sem variacao.
+  ///
+  /// Sentinela em vez de NULL por causa da unicidade abaixo: em SQL dois NULLs
+  /// nao colidem, entao `@@unique([productId, variantId])` com NULL deixaria
+  /// passar duas linhas de estoque para o mesmo produto — exatamente o que essa
+  /// restricao existe para impedir.
+  ///
+  /// Sem chave estrangeira declarada, justamente porque "" nao existe em
+  /// ProductVariant. A integridade fica no servico: excluir uma variacao apaga
+  /// o estoque dela (ver deleteVariant em services/variants.ts), e apagar o
+  /// produto ja leva as duas tabelas junto pela FK de productId.
+  variantId         String   @default("")
   quantity          Int      @default(0)
   reserved          Int      @default(0)
   lowStockThreshold Int      @default(5)
   updatedAt         DateTime @updatedAt
+
+  @@unique([productId, variantId])
+  @@index([variantId])
 }
 
 enum StockReason {
@@ -127,6 +170,8 @@ model StockMovement {
   id        String      @id @default(cuid())
   productId String
   product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// "" quando o produto nao tem variacao (mesma sentinela de Inventory).
+  variantId String      @default("")
   delta     Int
   reason    StockReason
   note      String?
@@ -153,6 +198,7 @@ model StockReservation {
   order     Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   productId String
   product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String            @default("")
   quantity  Int
   status    ReservationStatus @default(ACTIVE)
   expiresAt DateTime
@@ -180,10 +226,11 @@ model CartItem {
   cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId String   @default("")
   quantity  Int
   createdAt DateTime @default(now())
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, variantId])
 }
 
 enum OrderStatus {
@@ -231,6 +278,8 @@ model OrderItem {
   // snapshots: o pedido nao pode mudar se o produto for editado depois
   name           String
   sku            String
+  variantId      String?
+  variantLabel   String?
   imageUrl       String?
   unitPriceCents Int
   quantity       Int

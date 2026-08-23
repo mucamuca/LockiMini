@@ -46,8 +46,13 @@ export function useCartActions() {
   };
 
   const add = useMutation({
-    mutationFn: (input: { productId: string; quantity?: number }) =>
-      api.post<{ cart: Cart }>('/cart/items', { productId: input.productId, quantity: input.quantity ?? 1 }),
+    mutationFn: (input: { productId: string; quantity?: number; variantId?: string }) =>
+      api.post<{ cart: Cart }>('/cart/items', {
+        productId: input.productId,
+        quantity: input.quantity ?? 1,
+        // Omitido para produto sem variacao — o servidor recusa se vier a toa.
+        ...(input.variantId ? { variantId: input.variantId } : {}),
+      }),
     onSuccess: (res) => write(res.cart),
     onError,
   });

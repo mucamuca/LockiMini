@@ -105,7 +105,7 @@ export function AdminProducts() {
               key={f.value}
               onClick={() => setStatus(f.value)}
               className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                status === f.value ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-100'
+                status === f.value ? 'bg-ink-900 text-white' : 'text-ink-600 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-800'
               }`}
             >
               {f.label}
@@ -134,7 +134,7 @@ export function AdminProducts() {
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink-100">
+              <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
                 {items.map((p) => (
                   <tr key={p.id} className="hover:bg-ink-50/60">
                     <td className="px-4 py-3">
@@ -143,23 +143,23 @@ export function AdminProducts() {
   decoding="async"
   loading="lazy"/>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-ink-900">{p.name}</p>
+                          <p className="truncate font-medium text-ink-900 dark:text-ink-50">{p.name}</p>
                           <p className="font-mono text-xs text-ink-400">{p.sku}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-ink-600">{p.category?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-ink-900">
+                    <td className="px-4 py-3 text-ink-600 dark:text-ink-300">{p.category?.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-right font-semibold text-ink-900 dark:text-ink-50">
                       {money(p.priceCents)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`chip ${
                           p.inventory.available <= 0
-                            ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
+                            ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800'
                             : p.inventory.available <= p.inventory.lowStockThreshold
-                              ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
-                              : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                              ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800'
+                              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800'
                         }`}
                       >
                         {p.inventory.available}
@@ -171,7 +171,7 @@ export function AdminProducts() {
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`chip ${
-                          p.active ? 'bg-ink-100 text-ink-700' : 'bg-ink-100 text-ink-400'
+                          p.active ? 'bg-ink-100 dark:bg-ink-800 text-ink-700 dark:text-ink-200' : 'bg-ink-100 dark:bg-ink-800 text-ink-400'
                         }`}
                       >
                         {p.active ? 'Ativo' : 'Inativo'}
@@ -181,7 +181,7 @@ export function AdminProducts() {
                       <div className="flex justify-end gap-1">
                         <button
                           onClick={() => setEditing(p)}
-                          className="rounded-lg p-2 text-ink-500 transition hover:bg-ink-100 hover:text-ink-900"
+                          className="rounded-lg p-2 text-ink-500 dark:text-ink-400 transition hover:bg-ink-100 dark:hover:bg-ink-800 hover:text-ink-900 dark:hover:text-white"
                           aria-label={`Editar ${p.name}`}
                         >
                           <Pencil className="h-4 w-4" />
@@ -192,7 +192,7 @@ export function AdminProducts() {
                               remove.mutate(p.id);
                             }
                           }}
-                          className="rounded-lg p-2 text-ink-500 transition hover:bg-rose-50 hover:text-rose-600"
+                          className="rounded-lg p-2 text-ink-500 dark:text-ink-400 transition hover:bg-rose-50 dark:hover:bg-rose-950/40 hover:text-rose-600"
                           aria-label={`Excluir ${p.name}`}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -300,10 +300,10 @@ function ProductDrawer({
       <div className="absolute inset-0 bg-ink-950/40" onClick={onClose} />
       <form
         onSubmit={onSubmit}
-        className="relative flex h-full w-full max-w-lg animate-slide-in flex-col bg-white shadow-2xl"
+        className="relative flex h-full w-full max-w-lg animate-slide-in flex-col bg-white dark:bg-ink-900 shadow-2xl"
       >
-        <header className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
-          <h2 className="text-base font-bold text-ink-900">
+        <header className="flex items-center justify-between border-b border-ink-100 dark:border-ink-800 px-5 py-4">
+          <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">
             {isEdit ? 'Editar produto' : 'Novo produto'}
           </h2>
           <button type="button" onClick={onClose} className="btn-ghost px-2" aria-label="Fechar">
@@ -396,8 +396,8 @@ function ProductDrawer({
           </div>
 
           {isEdit && (
-            <p className="rounded-lg bg-ink-50 px-3 py-2 text-xs text-ink-500">
-              Estoque atual: <strong className="text-ink-800">{product!.inventory.quantity} un.</strong> (
+            <p className="rounded-lg bg-ink-50 dark:bg-ink-925 px-3 py-2 text-xs text-ink-500 dark:text-ink-400">
+              Estoque atual: <strong className="text-ink-800 dark:text-ink-100">{product!.inventory.quantity} un.</strong> (
               {product!.inventory.reserved} reservada(s)). Para alterar, use a tela de Estoque — assim a
               mudanca fica registrada no historico.
             </p>
@@ -413,29 +413,29 @@ function ProductDrawer({
             />
           </Field>
 
-          <div className="flex gap-6 border-t border-ink-100 pt-4">
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700">
+          <div className="flex gap-6 border-t border-ink-100 dark:border-ink-800 pt-4">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
               <input
                 type="checkbox"
                 checked={form.active}
                 onChange={(e) => set('active', e.target.checked)}
-                className="h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500"
+                className="h-4 w-4 rounded border-ink-300 dark:border-ink-600 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
               />
               Ativo na loja
             </label>
-            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-700 dark:text-ink-200">
               <input
                 type="checkbox"
                 checked={form.featured}
                 onChange={(e) => set('featured', e.target.checked)}
-                className="h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500"
+                className="h-4 w-4 rounded border-ink-300 dark:border-ink-600 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
               />
               Destaque
             </label>
           </div>
         </div>
 
-        <footer className="flex gap-3 border-t border-ink-100 bg-ink-50/60 px-5 py-4">
+        <footer className="flex gap-3 border-t border-ink-100 dark:border-ink-800 bg-ink-50/60 px-5 py-4">
           <button type="button" onClick={onClose} className="btn-outline flex-1">
             Cancelar
           </button>

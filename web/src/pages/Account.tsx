@@ -30,7 +30,7 @@ export function AccountPage() {
         <StatCard label="Cliente desde" value={user ? dateTime(user.createdAt).split(',')[0] : '—'} />
       </div>
 
-      <h2 className="mb-4 text-base font-bold text-ink-900">Meus pedidos</h2>
+      <h2 className="mb-4 text-base font-bold text-ink-900 dark:text-ink-50">Meus pedidos</h2>
 
       {isLoading ? (
         <TableSkeleton rows={4} cols={1} />
@@ -49,11 +49,11 @@ export function AccountPage() {
                 <div>
                   <Link
                     to={`/pedido/${order.number}`}
-                    className="font-mono text-sm font-bold text-ink-900 hover:text-brand-700"
+                    className="font-mono text-sm font-bold text-ink-900 dark:text-ink-50 hover:text-brand-700 dark:hover:text-brand-400"
                   >
                     {order.number}
                   </Link>
-                  <p className="mt-0.5 text-xs text-ink-500">{dateTime(order.createdAt)}</p>
+                  <p className="mt-0.5 text-xs text-ink-500 dark:text-ink-400">{dateTime(order.createdAt)}</p>
                 </div>
                 <StatusBadge status={order.status} />
               </div>
@@ -72,17 +72,17 @@ export function AccountPage() {
                     />
                   ))}
                   {order.items.length > 4 && (
-                    <span className="grid h-11 w-11 place-items-center rounded-lg border-2 border-white bg-ink-100 text-xs font-bold text-ink-600">
+                    <span className="grid h-11 w-11 place-items-center rounded-lg border-2 border-white bg-ink-100 dark:bg-ink-800 text-xs font-bold text-ink-600 dark:text-ink-300">
                       +{order.items.length - 4}
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-ink-500">
+                <p className="text-sm text-ink-500 dark:text-ink-400">
                   <Package className="mr-1 inline h-3.5 w-3.5" />
                   {order.items.reduce((n, i) => n + i.quantity, 0)} item(ns)
                 </p>
                 <div className="ml-auto flex items-center gap-4">
-                  <span className="text-lg font-bold text-ink-900">{money(order.totalCents)}</span>
+                  <span className="text-lg font-bold text-ink-900 dark:text-ink-50">{money(order.totalCents)}</span>
                   <Link to={`/pedido/${order.number}`} className="btn-outline text-sm">
                     Detalhes
                   </Link>
@@ -100,7 +100,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="card p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">{label}</p>
-      <p className="mt-1.5 text-2xl font-bold tracking-tight text-ink-900">{value}</p>
+      <p className="mt-1.5 text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{value}</p>
     </div>
   );
 }

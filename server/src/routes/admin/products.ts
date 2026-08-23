@@ -7,7 +7,7 @@ import { slugify } from '../../lib/slug.js';
 import { imageRef } from '../../lib/zod.js';
 import { badRequest, notFound } from '../../http/errors.js';
 import { q, validate } from '../../middleware/validate.js';
-import { adminProductDTO } from '../../services/serializers.js';
+import { adminProductDTO, PRODUCT_INCLUDE } from '../../services/serializers.js';
 import { publishStock } from '../../services/stock.js';
 
 export const adminProductsRouter = Router();
@@ -39,7 +39,7 @@ adminProductsRouter.get(
     const [rows, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: { inventory: true, category: true },
+        include: PRODUCT_INCLUDE,
         orderBy: { createdAt: 'desc' },
         skip: (filters.page - 1) * filters.perPage,
         take: filters.perPage,
@@ -62,7 +62,7 @@ adminProductsRouter.get(
   asyncHandler(async (req, res) => {
     const product = await prisma.product.findUnique({
       where: { id: req.params.id },
-      include: { inventory: true, category: true },
+      include: PRODUCT_INCLUDE,
     });
     if (!product) throw notFound('Produto nao encontrado.');
     const movements = await prisma.stockMovement.findMany({
@@ -114,10 +114,12 @@ adminProductsRouter.post(
         featured: data.featured,
         weightGrams: data.weightGrams,
         inventory: {
+          // variantId "" — produto novo nasce sem variacoes; elas sao criadas
+          // depois, pelas rotas de /variacoes.
           create: { quantity: data.quantity, lowStockThreshold: data.lowStockThreshold },
         },
       },
-      include: { inventory: true, category: true },
+      include: PRODUCT_INCLUDE,
     });
 
     if (data.quantity > 0) {
@@ -161,12 +163,14 @@ adminProductsRouter.patch(
         active: data.active,
         featured: data.featured,
         weightGrams: data.weightGrams,
+        // inventory e uma lista desde que existem variacoes: o limiar de alerta
+        // vale para todas as linhas do produto.
         inventory:
           data.lowStockThreshold !== undefined
-            ? { update: { lowStockThreshold: data.lowStockThreshold } }
+            ? { updateMany: { where: {}, data: { lowStockThreshold: data.lowStockThreshold } } }
             : undefined,
       },
-      include: { inventory: true, category: true },
+      include: PRODUCT_INCLUDE,
     });
 
     await publishStock([product.id]);
@@ -186,7 +190,7 @@ adminProductsRouter.delete(
       const product = await prisma.product.update({
         where: { id: req.params.id },
         data: { active: false },
-        include: { inventory: true, category: true },
+        include: PRODUCT_INCLUDE,
       });
       return res.json({
         product: adminProductDTO(product),

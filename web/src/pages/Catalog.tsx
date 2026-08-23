@@ -79,10 +79,10 @@ export function CatalogPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-3xl">
           {filters.search ? `Resultados para "${filters.search}"` : 'Catalogo'}
         </h1>
-        <p className="mt-1.5 text-sm text-ink-500">
+        <p className="mt-1.5 text-sm text-ink-500 dark:text-ink-400">
           {products.isLoading
             ? 'Carregando produtos...'
             : `${products.data?.total ?? 0} produto(s) encontrado(s)`}
@@ -93,13 +93,13 @@ export function CatalogPage() {
         <aside className="lg:sticky lg:top-24 lg:h-fit">
           <div className="card p-5">
             <div className="flex items-center justify-between">
-              <h2 className="flex items-center gap-2 text-sm font-bold text-ink-900">
+              <h2 className="flex items-center gap-2 text-sm font-bold text-ink-900 dark:text-ink-50">
                 <SlidersHorizontal className="h-4 w-4" /> Filtros
               </h2>
               {activeCount > 0 && (
                 <button
                   onClick={() => setParams({}, { replace: true })}
-                  className="text-xs font-semibold text-brand-600 hover:underline"
+                  className="text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
                 >
                   Limpar ({activeCount})
                 </button>
@@ -112,7 +112,7 @@ export function CatalogPage() {
                 <button
                   onClick={() => setFilter('category', '')}
                   className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                    !filters.category ? 'bg-ink-900 font-semibold text-white' : 'text-ink-600 hover:bg-ink-50'
+                    !filters.category ? 'bg-ink-900 font-semibold text-white' : 'text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850'
                   }`}
                 >
                   Todas
@@ -124,7 +124,7 @@ export function CatalogPage() {
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
                       filters.category === c.slug
                         ? 'bg-ink-900 font-semibold text-white'
-                        : 'text-ink-600 hover:bg-ink-50'
+                        : 'text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850'
                     }`}
                   >
                     {c.name}
@@ -157,22 +157,22 @@ export function CatalogPage() {
               </div>
             </div>
 
-            <div className="mt-5 space-y-2.5 border-t border-ink-100 pt-5">
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-700">
+            <div className="mt-5 space-y-2.5 border-t border-ink-100 dark:border-ink-800 pt-5">
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
                 <input
                   type="checkbox"
                   checked={filters.inStock}
                   onChange={(e) => setFilter('inStock', e.target.checked)}
-                  className="h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500"
+                  className="h-4 w-4 rounded border-ink-300 dark:border-ink-600 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                 />
                 Somente disponiveis
               </label>
-              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-700">
+              <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-700 dark:text-ink-200">
                 <input
                   type="checkbox"
                   checked={filters.featured}
                   onChange={(e) => setFilter('featured', e.target.checked)}
-                  className="h-4 w-4 rounded border-ink-300 text-brand-600 focus:ring-brand-500"
+                  className="h-4 w-4 rounded border-ink-300 dark:border-ink-600 text-brand-600 dark:text-brand-400 focus:ring-brand-500"
                 />
                 Apenas destaques
               </label>
@@ -182,7 +182,7 @@ export function CatalogPage() {
 
         <div>
           <div className="mb-5 flex items-center justify-between gap-4">
-            <p className="text-sm text-ink-500">
+            <p className="text-sm text-ink-500 dark:text-ink-400">
               Pagina {filters.page} de {products.data?.totalPages ?? 1}
             </p>
             <select

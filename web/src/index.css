@@ -10,21 +10,37 @@
 
   body {
     @apply bg-ink-50 text-ink-900 font-sans;
+    @apply dark:bg-ink-950 dark:text-ink-100;
+    /* A troca de tema desliza em vez de piscar. Cor de fundo e barata de animar
+       porque nao remede o layout. */
+    transition:
+      background-color 0.25s ease,
+      color 0.25s ease;
+  }
+
+  /* Diz ao navegador que os controles nativos (scrollbar, campos de data,
+     seletor de cor) tambem devem usar a paleta escura. */
+  :root {
+    color-scheme: light;
+  }
+  :root.dark {
+    color-scheme: dark;
   }
 
   /* Foco visivel apenas para navegacao por teclado. */
   :focus-visible {
     @apply outline-none ring-2 ring-brand-500 ring-offset-2 ring-offset-white;
+    @apply dark:ring-offset-ink-950;
   }
 
   ::selection {
-    @apply bg-brand-100 text-brand-900;
+    @apply bg-brand-100 text-brand-900 dark:bg-brand-800 dark:text-white;
   }
 
   /* Reserva o espaco da imagem antes dela chegar: sem isso o conteudo abaixo
      "pula" quando cada foto carrega, o que parece travamento. */
   img {
-    @apply bg-ink-100;
+    @apply bg-ink-100 dark:bg-ink-850;
   }
 }
 
@@ -45,15 +61,20 @@
 
   .btn-primary {
     @apply btn bg-ink-900 text-white hover:bg-ink-800;
+    /* No escuro o botao inverte: claro sobre fundo escuro continua sendo o
+       elemento de maior peso visual da tela. */
+    @apply dark:bg-ink-50 dark:text-ink-900 dark:hover:bg-white;
   }
   .btn-brand {
     @apply btn bg-brand-600 text-white hover:bg-brand-700;
   }
   .btn-ghost {
     @apply btn bg-transparent text-ink-700 hover:bg-ink-100;
+    @apply dark:text-ink-300 dark:hover:bg-ink-850;
   }
   .btn-outline {
     @apply btn border border-ink-200 bg-white text-ink-800 hover:border-ink-300 hover:bg-ink-50;
+    @apply dark:border-ink-700 dark:bg-ink-900 dark:text-ink-100 dark:hover:border-ink-600 dark:hover:bg-ink-850;
   }
   .btn-danger {
     @apply btn bg-rose-600 text-white hover:bg-rose-700;
@@ -63,6 +84,8 @@
     @apply w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900
            placeholder:text-ink-400 focus:border-brand-500 focus:outline-none
            focus:ring-4 focus:ring-brand-500/10;
+    @apply dark:border-ink-700 dark:bg-ink-925 dark:text-ink-50 dark:placeholder:text-ink-400
+           dark:focus:border-brand-500 dark:focus:ring-brand-500/20;
     transition:
       border-color 0.15s ease,
       box-shadow 0.15s ease;
@@ -71,7 +94,7 @@
     @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/10;
   }
   .label {
-    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-500;
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-ink-500 dark:text-ink-400;
   }
   .field-error {
     @apply mt-1.5 text-xs font-medium text-rose-600;
@@ -79,13 +102,14 @@
 
   .card {
     @apply rounded-2xl border border-ink-100 bg-white shadow-card;
+    @apply dark:border-ink-800 dark:bg-ink-900 dark:shadow-card-dark;
   }
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold;
   }
 
   .skeleton {
-    @apply relative overflow-hidden rounded-lg bg-ink-100;
+    @apply relative overflow-hidden rounded-lg bg-ink-100 dark:bg-ink-850;
   }
   /* Brilho que atravessa o bloco: so translada, entao nao repinta o layout. */
   .skeleton::after {
@@ -100,6 +124,15 @@
       transparent
     );
     animation: shimmer 1.4s infinite;
+  }
+  /* No escuro o brilho branco estoura; um veu bem fraco basta. */
+  .dark .skeleton::after {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.07),
+      transparent
+    );
   }
 
   /* Cartao de produto: sobe e ganha profundidade ao passar o mouse. */
@@ -246,7 +279,7 @@
   height: 8px;
 }
 .scroll-slim::-webkit-scrollbar-thumb {
-  @apply rounded-full bg-ink-200;
+  @apply rounded-full bg-ink-200 dark:bg-ink-700;
 }
 .scroll-slim::-webkit-scrollbar-track {
   background: transparent;

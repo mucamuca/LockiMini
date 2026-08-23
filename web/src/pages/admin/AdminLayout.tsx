@@ -1,4 +1,5 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import {
   ArrowLeft,
   Boxes,
@@ -27,15 +28,15 @@ export function AdminLayout() {
   const { connected } = useRealtime();
 
   return (
-    <div className="min-h-screen bg-ink-50">
+    <div className="min-h-screen bg-ink-50 dark:bg-ink-925">
       <div className="mx-auto flex max-w-[1600px]">
-        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-ink-100 bg-white lg:flex">
-          <div className="flex h-16 items-center gap-2 border-b border-ink-100 px-5">
+        <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900 lg:flex">
+          <div className="flex h-16 items-center gap-2 border-b border-ink-100 dark:border-ink-800 px-5">
             <span className="grid h-8 w-8 place-items-center rounded-xl bg-ink-900 text-sm font-bold text-white">
               L
             </span>
             <div className="leading-tight">
-              <p className="text-sm font-bold text-ink-900">LockiMini</p>
+              <p className="text-sm font-bold text-ink-900 dark:text-ink-50">LockiMini</p>
               <p className="text-[11px] text-ink-400">Painel administrativo</p>
             </div>
           </div>
@@ -48,7 +49,7 @@ export function AdminLayout() {
                 end={end}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                    isActive ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-50 hover:text-ink-900'
+                    isActive ? 'bg-ink-900 text-white' : 'text-ink-600 dark:text-ink-300 hover:bg-ink-50 dark:hover:bg-ink-850 hover:text-ink-900 dark:hover:text-white'
                   }`
                 }
               >
@@ -58,16 +59,19 @@ export function AdminLayout() {
             ))}
           </nav>
 
-          <div className="border-t border-ink-100 p-3">
+          <div className="border-t border-ink-100 dark:border-ink-800 p-3">
             <div
               className={`mb-2 flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium ${
-                connected ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                connected ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300' : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300'
               }`}
             >
               {connected ? <Wifi className="h-3.5 w-3.5" /> : <WifiOff className="h-3.5 w-3.5" />}
               {connected ? 'Tempo real ativo' : 'Reconectando...'}
             </div>
-            <p className="truncate px-3 text-xs text-ink-500">{user?.email}</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="truncate px-3 text-xs text-ink-500 dark:text-ink-400">{user?.email}</p>
+              <ThemeToggle />
+            </div>
             <Link to="/" className="btn-ghost mt-1 w-full justify-start text-sm">
               <ArrowLeft className="h-4 w-4" /> Voltar a loja
             </Link>
@@ -75,7 +79,7 @@ export function AdminLayout() {
         </aside>
 
         <div className="min-w-0 flex-1">
-          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-ink-100 bg-white/90 px-4 backdrop-blur lg:hidden">
+          <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-ink-100 bg-white px-4 dark:border-ink-800 dark:bg-ink-900 lg:hidden">
             <Link to="/" className="btn-ghost px-2">
               <ArrowLeft className="h-4 w-4" />
             </Link>
@@ -87,7 +91,7 @@ export function AdminLayout() {
                   to={to}
                   end={end}
                   className={({ isActive }) =>
-                    `rounded-lg p-2 ${isActive ? 'bg-ink-900 text-white' : 'text-ink-500'}`
+                    `rounded-lg p-2 ${isActive ? 'bg-ink-900 text-white' : 'text-ink-500 dark:text-ink-400'}`
                   }
                   title={label}
                 >

@@ -5,7 +5,7 @@ import { prisma } from '../db.js';
 import { asyncHandler } from '../lib/async.js';
 import { notFound } from '../http/errors.js';
 import { q, validate } from '../middleware/validate.js';
-import { productDTO } from '../services/serializers.js';
+import { productDTO, PRODUCT_INCLUDE } from '../services/serializers.js';
 
 export const catalogRouter = Router();
 
@@ -60,7 +60,7 @@ catalogRouter.get(
     const [rows, total] = await Promise.all([
       prisma.product.findMany({
         where,
-        include: { inventory: true, category: true },
+        include: PRODUCT_INCLUDE,
         orderBy: ORDER_BY[filters.sort],
         skip: (filters.page - 1) * filters.perPage,
         take: filters.perPage,
@@ -88,7 +88,7 @@ catalogRouter.get(
   asyncHandler(async (req, res) => {
     const product = await prisma.product.findFirst({
       where: { slug: req.params.slug, active: true },
-      include: { inventory: true, category: true },
+      include: PRODUCT_INCLUDE,
     });
     if (!product) throw notFound('Produto nao encontrado.');
 
@@ -98,7 +98,7 @@ catalogRouter.get(
         categoryId: product.categoryId,
         NOT: { id: product.id },
       },
-      include: { inventory: true, category: true },
+      include: PRODUCT_INCLUDE,
       take: 4,
       orderBy: { createdAt: 'desc' },
     });

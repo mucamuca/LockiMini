@@ -1,13 +1,14 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Barcode, CreditCard, Lock, QrCode, ShieldCheck, Tag, X } from 'lucide-react';
+import { Barcode, Check, CreditCard, Lock, QrCode, ShieldCheck, Tag, X } from 'lucide-react';
 import { ApiError, api } from '../lib/api';
 import { installmentLabel, maskCardNumber, maskPostalCode, money } from '../lib/format';
 import type { Order, PaymentMethod, User } from '../lib/types';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../store/auth';
 import { useToast } from '../components/Toast';
+import { useCepLookup, type CepAddress, type CepPermissions } from '../hooks/useCepLookup';
 import { Field, Spinner } from '../components/ui';
 
 type PaymentMethodsInfo = {
@@ -57,6 +58,40 @@ export function CheckoutPage() {
     setForm((f) => ({ ...f, [key]: value }));
     setErrors((e) => ({ ...e, [key]: '' }));
   };
+
+  // Ref para o hook ler o formulario atual sem virar dependencia e recriar
+  // a funcao de busca a cada tecla digitada.
+  const formRef = useRef(form);
+  formRef.current = form;
+
+  const aplicarEndereco = useCallback(
+    (address: CepAddress, pode: CepPermissions) => {
+      setForm((f) => ({
+        ...f,
+        // A rua vem sem numero: preenchemos o nome e a pessoa completa.
+        line1: pode.street && address.street ? address.street : f.line1,
+        district: pode.district && address.district ? address.district : f.district,
+        city: pode.city && address.city ? address.city : f.city,
+        state: pode.state && address.state ? address.state : f.state,
+      }));
+      setErrors((e) => ({ ...e, line1: '', district: '', city: '', state: '' }));
+
+      // O cursor vai para onde ainda falta digitar: o numero da casa.
+      if (address.street) {
+        // setTimeout, nao requestAnimationFrame: rAF nao dispara em aba oculta.
+        window.setTimeout(() => {
+          const campo = document.getElementById('campo-endereco') as HTMLInputElement | null;
+          if (campo && !/[0-9]/.test(campo.value)) {
+            campo.focus();
+            campo.setSelectionRange(campo.value.length, campo.value.length);
+          }
+        }, 0);
+      }
+    },
+    [],
+  );
+
+  const { lookup: buscarCep, status: cepStatus } = useCepLookup(aplicarEndereco);
 
   const paymentInfo = useQuery({
     queryKey: ['checkout', 'payment-methods'],
@@ -193,8 +228,8 @@ export function CheckoutPage() {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-20 text-center">
-        <h1 className="text-2xl font-bold text-ink-900">Carrinho vazio</h1>
-        <p className="mt-2 text-ink-500">Adicione produtos antes de finalizar a compra.</p>
+        <h1 className="text-2xl font-bold text-ink-900 dark:text-ink-50">Carrinho vazio</h1>
+        <p className="mt-2 text-ink-500 dark:text-ink-400">Adicione produtos antes de finalizar a compra.</p>
         <Link to="/catalogo" className="btn-primary mt-6">Ver catalogo</Link>
       </div>
     );
@@ -206,15 +241,15 @@ export function CheckoutPage() {
 
   return (
     <form onSubmit={onSubmit} className="mx-auto max-w-6xl px-4 py-10">
-      <h1 className="text-2xl font-bold tracking-tight text-ink-900 sm:text-3xl">Finalizar compra</h1>
-      <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-500">
+      <h1 className="text-2xl font-bold tracking-tight text-ink-900 dark:text-ink-50 sm:text-3xl">Finalizar compra</h1>
+      <p className="mt-1.5 flex items-center gap-1.5 text-sm text-ink-500 dark:text-ink-400">
         <Lock className="h-3.5 w-3.5" /> Ambiente de demonstracao — nenhuma cobranca real e feita.
       </p>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_380px]">
         <div className="space-y-6">
           <section className="card p-6">
-            <h2 className="text-base font-bold text-ink-900">1. Contato</h2>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">1. Contato</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <Field label="E-mail" error={errors.email} className="sm:col-span-2">
                 <input
@@ -237,9 +272,9 @@ export function CheckoutPage() {
               </Field>
             </div>
             {!user && (
-              <p className="mt-3 text-xs text-ink-500">
+              <p className="mt-3 text-xs text-ink-500 dark:text-ink-400">
                 Ja tem conta?{' '}
-                <Link to="/entrar" className="font-semibold text-brand-600 hover:underline">
+                <Link to="/entrar" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">
                   Entre
                 </Link>{' '}
                 para acompanhar seus pedidos.
@@ -248,7 +283,7 @@ export function CheckoutPage() {
           </section>
 
           <section className="card p-6">
-            <h2 className="text-base font-bold text-ink-900">2. Entrega</h2>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">2. Entrega</h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-6">
               <Field label="Quem recebe" error={errors.recipient} className="sm:col-span-4">
                 <input
@@ -259,17 +294,51 @@ export function CheckoutPage() {
                 />
               </Field>
               <Field label="CEP" error={errors.postalCode} className="sm:col-span-2">
-                <input
-                  value={form.postalCode}
-                  onChange={(e) => set('postalCode', maskPostalCode(e.target.value))}
-                  className={`input ${errors.postalCode ? 'input-error' : ''}`}
-                  placeholder="00000-000"
-                  inputMode="numeric"
-                  autoComplete="postal-code"
-                />
+                <div className="relative">
+                  <input
+                    value={form.postalCode}
+                    onChange={(e) => {
+                      const valor = maskPostalCode(e.target.value);
+                      set('postalCode', valor);
+                      // Busca sozinha ao completar os 8 digitos.
+                      void buscarCep(valor, formRef.current);
+                    }}
+                    onBlur={(e) => void buscarCep(e.target.value, formRef.current)}
+                    className={`input pr-10 ${errors.postalCode ? 'input-error' : ''}`}
+                    placeholder="00000-000"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    aria-describedby="cep-status"
+                  />
+                  {cepStatus === 'loading' && (
+                    <Spinner className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                  )}
+                  {cepStatus === 'ok' && (
+                    <Check className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-emerald-600" />
+                  )}
+                </div>
               </Field>
+              <div className="sm:col-span-4" id="cep-status" aria-live="polite">
+                {cepStatus === 'ok' && (
+                  <p className="text-xs font-medium text-emerald-700 dark:text-emerald-300">
+                    Endereco preenchido pelo CEP — confira e complete com o numero.
+                  </p>
+                )}
+                {cepStatus === 'notfound' && (
+                  <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                    CEP nao encontrado. Preencha o endereco manualmente.
+                  </p>
+                )}
+                {cepStatus === 'error' && (
+                  <p className="text-xs font-medium text-ink-500 dark:text-ink-400">
+                    Nao consegui consultar o CEP agora. Pode preencher a mao normalmente.
+                  </p>
+                )}
+              </div>
+
               <Field label="Endereco" error={errors.line1} className="sm:col-span-4">
                 <input
+                  id="campo-endereco"
                   value={form.line1}
                   onChange={(e) => set('line1', e.target.value)}
                   className={`input ${errors.line1 ? 'input-error' : ''}`}
@@ -313,7 +382,7 @@ export function CheckoutPage() {
           </section>
 
           <section className="card p-6">
-            <h2 className="text-base font-bold text-ink-900">3. Pagamento</h2>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">3. Pagamento</h2>
 
             <div className="mt-4 grid gap-2 sm:grid-cols-3">
               {availableMethods.map((m) => {
@@ -327,13 +396,13 @@ export function CheckoutPage() {
                     className={`flex items-start gap-3 rounded-xl border p-3.5 text-left transition ${
                       active
                         ? 'border-brand-600 bg-brand-50/60 ring-1 ring-brand-600'
-                        : 'border-ink-200 hover:border-ink-300'
+                        : 'border-ink-200 dark:border-ink-700 hover:border-ink-300 dark:hover:border-ink-600'
                     }`}
                   >
-                    <meta.icon className={`mt-0.5 h-5 w-5 ${active ? 'text-brand-600' : 'text-ink-400'}`} />
+                    <meta.icon className={`mt-0.5 h-5 w-5 ${active ? 'text-brand-600 dark:text-brand-400' : 'text-ink-400'}`} />
                     <span>
-                      <span className="block text-sm font-semibold text-ink-900">{meta.label}</span>
-                      <span className="block text-xs text-ink-500">{meta.hint}</span>
+                      <span className="block text-sm font-semibold text-ink-900 dark:text-ink-50">{meta.label}</span>
+                      <span className="block text-xs text-ink-500 dark:text-ink-400">{meta.hint}</span>
                     </span>
                   </button>
                 );
@@ -399,15 +468,15 @@ export function CheckoutPage() {
                 </Field>
 
                 {(paymentInfo.data?.testCards.length ?? 0) > 0 && (
-                  <div className="rounded-xl bg-ink-50 p-3.5 text-xs sm:col-span-6">
-                    <p className="font-semibold text-ink-700">Cartoes de teste</p>
-                    <ul className="mt-1.5 space-y-0.5 text-ink-500">
+                  <div className="rounded-xl bg-ink-50 dark:bg-ink-925 p-3.5 text-xs sm:col-span-6">
+                    <p className="font-semibold text-ink-700 dark:text-ink-200">Cartoes de teste</p>
+                    <ul className="mt-1.5 space-y-0.5 text-ink-500 dark:text-ink-400">
                       {paymentInfo.data!.testCards.map((c) => (
                         <li key={c.number}>
                           <button
                             type="button"
                             onClick={() => set('cardNumber', c.number)}
-                            className="font-mono text-brand-600 hover:underline"
+                            className="font-mono text-brand-600 dark:text-brand-400 hover:underline"
                           >
                             {c.number}
                           </button>{' '}
@@ -421,18 +490,18 @@ export function CheckoutPage() {
             )}
 
             {method !== 'credit_card' && (
-              <p className="mt-5 rounded-xl bg-ink-50 p-4 text-sm text-ink-600">
+              <p className="mt-5 rounded-xl bg-ink-50 dark:bg-ink-925 p-4 text-sm text-ink-600 dark:text-ink-300">
                 {method === 'pix'
                   ? 'Ao confirmar, geramos o codigo Pix na proxima tela.'
                   : 'Ao confirmar, o boleto e gerado na proxima tela.'}{' '}
                 As unidades ficam reservadas para voce por{' '}
-                <strong className="text-ink-900">{paymentInfo.data?.reservationTtlMinutes ?? 20} minutos</strong>.
+                <strong className="text-ink-900 dark:text-ink-50">{paymentInfo.data?.reservationTtlMinutes ?? 20} minutos</strong>.
               </p>
             )}
           </section>
 
           <section className="card p-6">
-            <h2 className="text-base font-bold text-ink-900">4. Observacoes (opcional)</h2>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">4. Observacoes (opcional)</h2>
             <textarea
               value={form.notes}
               onChange={(e) => set('notes', e.target.value)}
@@ -445,7 +514,7 @@ export function CheckoutPage() {
 
         <aside className="lg:sticky lg:top-24 lg:h-fit">
           <div className="card p-5">
-            <h2 className="text-base font-bold text-ink-900">Resumo do pedido</h2>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Resumo do pedido</h2>
 
             <ul className="mt-4 max-h-64 space-y-3 overflow-y-auto scroll-slim pr-1">
               {cart.items.map((item) => (
@@ -459,18 +528,18 @@ export function CheckoutPage() {
                     </span>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm font-medium text-ink-900">{item.name}</p>
-                    <p className="text-xs text-ink-500">{money(item.unitPriceCents)}</p>
+                    <p className="line-clamp-2 text-sm font-medium text-ink-900 dark:text-ink-50">{item.name}</p>
+                    <p className="text-xs text-ink-500 dark:text-ink-400">{money(item.unitPriceCents)}</p>
                   </div>
-                  <span className="text-sm font-semibold text-ink-900">{money(item.totalCents)}</span>
+                  <span className="text-sm font-semibold text-ink-900 dark:text-ink-50">{money(item.totalCents)}</span>
                 </li>
               ))}
             </ul>
 
-            <div className="mt-4 border-t border-ink-100 pt-4">
+            <div className="mt-4 border-t border-ink-100 dark:border-ink-800 pt-4">
               {appliedCoupon ? (
-                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2">
-                  <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700">
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2">
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
                     <Tag className="h-3.5 w-3.5" /> {appliedCoupon.code}
                   </span>
                   <button
@@ -479,7 +548,7 @@ export function CheckoutPage() {
                       setAppliedCoupon(null);
                       setCoupon('');
                     }}
-                    className="rounded p-1 text-emerald-700 hover:bg-emerald-100"
+                    className="rounded p-1 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100"
                     aria-label="Remover cupom"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -505,8 +574,8 @@ export function CheckoutPage() {
               )}
             </div>
 
-            <dl className="mt-4 space-y-2 border-t border-ink-100 pt-4 text-sm">
-              <div className="flex justify-between text-ink-600">
+            <dl className="mt-4 space-y-2 border-t border-ink-100 dark:border-ink-800 pt-4 text-sm">
+              <div className="flex justify-between text-ink-600 dark:text-ink-300">
                 <dt>Subtotal</dt>
                 <dd>{money(cart.subtotalCents)}</dd>
               </div>
@@ -516,11 +585,11 @@ export function CheckoutPage() {
                   <dd>-{money(discountCents)}</dd>
                 </div>
               )}
-              <div className="flex justify-between text-ink-600">
+              <div className="flex justify-between text-ink-600 dark:text-ink-300">
                 <dt>Frete</dt>
                 <dd>{cart.shippingCents === 0 ? 'Gratis' : money(cart.shippingCents)}</dd>
               </div>
-              <div className="flex justify-between border-t border-ink-100 pt-3 text-lg font-bold text-ink-900">
+              <div className="flex justify-between border-t border-ink-100 dark:border-ink-800 pt-3 text-lg font-bold text-ink-900 dark:text-ink-50">
                 <dt>Total</dt>
                 <dd>{money(totalCents)}</dd>
               </div>

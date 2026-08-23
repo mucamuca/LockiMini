@@ -82,7 +82,7 @@ export function HomePage() {
             </p>
 
             <div className="animate-fade-up mt-8 flex flex-wrap gap-3" style={{ animationDelay: '280ms' }}>
-              <Link to="/catalogo" className="btn group bg-white text-ink-900 hover:bg-ink-100">
+              <Link to="/catalogo" className="btn group bg-white dark:bg-ink-900 text-ink-900 dark:text-ink-50 hover:bg-ink-100 dark:hover:bg-ink-800">
                 Ver catalogo
                 <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
               </Link>
@@ -122,16 +122,16 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="border-b border-ink-100 bg-white">
+      <section className="border-b border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900">
         <div className="mx-auto grid max-w-7xl gap-6 px-4 py-8 sm:grid-cols-2 lg:grid-cols-4">
           {BENEFITS.map(({ icon: Icon, title, text }, i) => (
             <Reveal key={title} delay={i * 70} className="flex items-start gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 text-brand-600">
+              <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-brand-50 dark:bg-brand-900/25 text-brand-600 dark:text-brand-400">
                 <Icon className="h-5 w-5" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-ink-900">{title}</p>
-                <p className="text-sm text-ink-500">{text}</p>
+                <p className="text-sm font-semibold text-ink-900 dark:text-ink-50">{title}</p>
+                <p className="text-sm text-ink-500 dark:text-ink-400">{text}</p>
               </div>
             </Reveal>
           ))}
@@ -139,7 +139,7 @@ export function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-12">
-        <Reveal as="h2" className="text-xl font-bold tracking-tight text-ink-900">
+        <Reveal as="h2" className="text-xl font-bold tracking-tight text-ink-900 dark:text-ink-50">
           Categorias
         </Reveal>
         <div className="mt-5 grid gap-4 sm:grid-cols-3 lg:grid-cols-5">
@@ -206,8 +206,8 @@ function ProductSection({
     <section className="mx-auto max-w-7xl px-4 py-8">
       <Reveal className="mb-5 flex items-end justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold tracking-tight text-ink-900">{title}</h2>
-          <p className="text-sm text-ink-500">{subtitle}</p>
+          <h2 className="text-xl font-bold tracking-tight text-ink-900 dark:text-ink-50">{title}</h2>
+          <p className="text-sm text-ink-500 dark:text-ink-400">{subtitle}</p>
         </div>
         <Link to={to} className="btn-ghost group text-sm">
           Ver todos

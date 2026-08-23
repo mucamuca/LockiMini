@@ -5,17 +5,22 @@ import { ChevronRight, Minus, PackageCheck, Plus, RefreshCw, ShieldCheck, Shoppi
 import { api } from '../lib/api';
 import { money } from '../lib/format';
 import type { Product } from '../lib/types';
-import { useStockStore } from '../store/stock';
+import { useLiveVariantStock, useStockStore } from '../store/stock';
 import { useCartActions } from '../hooks/useCart';
 import { useToast } from '../components/Toast';
 import { ProductCard } from '../components/ProductCard';
 import { StockBadge } from '../components/StockBadge';
+import { VariantPicker, findVariant, firstAvailableVariant } from '../components/VariantPicker';
 import { EmptyState, Spinner } from '../components/ui';
 
 export function ProductDetailPage() {
   const { slug = '' } = useParams();
   const [quantity, setQuantity] = useState(1);
   const [imageIndex, setImageIndex] = useState(0);
+  const [choice, setChoice] = useState<{ color: string | null; size: string | null }>({
+    color: null,
+    size: null,
+  });
   const seed = useStockStore((s) => s.seed);
   const { add } = useCartActions();
   const toast = useToast();
@@ -29,16 +34,32 @@ export function ProductDetailPage() {
     if (data) seed([data.product, ...data.related]);
     setQuantity(1);
     setImageIndex(0);
+    // Abre ja com a primeira combinacao comprável escolhida: ninguem precisa
+    // adivinhar qual cor tem o tamanho dele.
+    const inicial = firstAvailableVariant(data?.product.variants ?? []);
+    setChoice({ color: inicial?.colorName ?? null, size: inicial?.sizeName ?? null });
   }, [data, seed]);
 
   const product = data?.product;
+  const variant = product ? findVariant(product.variants, choice.color, choice.size) : undefined;
+  const needsChoice = Boolean(product && product.variants.length > 0 && !variant);
+
   const liveStock = useStockStore((s) => (product ? s.live[product.id] : undefined));
-  const stock = liveStock ?? product?.stock;
+  // Com variacao escolhida, o estoque que vale e o DELA — o agregado do produto
+  // diria "8 disponiveis" mesmo com o tamanho escolhido esgotado.
+  const variantLive = useLiveVariantStock(variant?.id, variant?.stock);
+  const stock = product?.variants.length ? variantLive : (liveStock ?? product?.stock);
+  const priceCents = variant?.priceCents ?? product?.priceCents ?? 0;
 
   // Se o estoque cair enquanto a pagina esta aberta, a quantidade acompanha.
   useEffect(() => {
     if (stock && quantity > stock.available && stock.available > 0) setQuantity(stock.available);
   }, [stock, quantity]);
+
+  // Trocar de cor ou tamanho recomeca a quantidade: o limite mudou junto.
+  useEffect(() => {
+    setQuantity(1);
+  }, [choice.color, choice.size]);
 
   if (isLoading) {
     return (
@@ -55,7 +76,7 @@ export function ProductDetailPage() {
     );
   }
 
-  if (isError || !product || !stock) {
+  if (isError || !product) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-20">
         <EmptyState
@@ -71,21 +92,25 @@ export function ProductDetailPage() {
     );
   }
 
+  // Estoque efetivo da escolha atual. Sem escolha feita, nada e comprável.
+  const disponivel = stock?.available ?? 0;
+  const esgotado = !stock || stock.outOfStock;
+
   const discount =
-    product.compareAtCents && product.compareAtCents > product.priceCents
-      ? Math.round((1 - product.priceCents / product.compareAtCents) * 100)
+    product.compareAtCents && product.compareAtCents > priceCents
+      ? Math.round((1 - priceCents / product.compareAtCents) * 100)
       : 0;
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8">
-      <nav className="mb-6 flex items-center gap-1.5 text-sm text-ink-500">
-        <Link to="/" className="hover:text-ink-900">Inicio</Link>
+      <nav className="mb-6 flex items-center gap-1.5 text-sm text-ink-500 dark:text-ink-400">
+        <Link to="/" className="hover:text-ink-900 dark:hover:text-white">Inicio</Link>
         <ChevronRight className="h-3.5 w-3.5" />
-        <Link to="/catalogo" className="hover:text-ink-900">Catalogo</Link>
+        <Link to="/catalogo" className="hover:text-ink-900 dark:hover:text-white">Catalogo</Link>
         {product.category && (
           <>
             <ChevronRight className="h-3.5 w-3.5" />
-            <Link to={`/catalogo?category=${product.category.slug}`} className="hover:text-ink-900">
+            <Link to={`/catalogo?category=${product.category.slug}`} className="hover:text-ink-900 dark:hover:text-white">
               {product.category.name}
             </Link>
           </>
@@ -94,9 +119,9 @@ export function ProductDetailPage() {
 
       <div className="grid gap-10 lg:grid-cols-2">
         <div>
-          <div className="overflow-hidden rounded-2xl border border-ink-100 bg-white">
+          <div className="overflow-hidden rounded-2xl border border-ink-100 dark:border-ink-800 bg-white dark:bg-ink-900">
             <img
-              src={product.images[imageIndex]}
+              src={variant?.imageUrl ?? product.images[imageIndex]}
               alt={product.name}
               className="aspect-square w-full object-cover"
               decoding="async"
@@ -111,7 +136,7 @@ export function ProductDetailPage() {
                   key={src}
                   onClick={() => setImageIndex(i)}
                   className={`overflow-hidden rounded-xl border-2 transition ${
-                    i === imageIndex ? 'border-brand-600' : 'border-transparent hover:border-ink-200'
+                    i === imageIndex ? 'border-brand-600' : 'border-transparent hover:border-ink-200 dark:hover:border-ink-700'
                   }`}
                   aria-label={`Imagem ${i + 1}`}
                 >
@@ -127,48 +152,55 @@ export function ProductDetailPage() {
         <div>
           <div className="flex flex-wrap items-center gap-2">
             {product.category && (
-              <span className="chip bg-ink-100 text-ink-600">{product.category.name}</span>
+              <span className="chip bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-300">{product.category.name}</span>
             )}
-            <StockBadge productId={product.id} fallback={product.stock} size="md" />
+            <StockBadge
+              productId={product.id}
+              fallback={product.stock}
+              variantStock={variant?.stock}
+              size="md"
+            />
             <span className="text-xs text-ink-400">SKU {product.sku}</span>
           </div>
 
-          <h1 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-ink-900">
+          <h1 className="mt-3 text-3xl font-extrabold leading-tight tracking-tight text-ink-900 dark:text-ink-50">
             {product.name}
           </h1>
 
           <div className="mt-5 flex flex-wrap items-baseline gap-3">
-            <span className="text-4xl font-extrabold tracking-tight text-ink-900">
-              {money(product.priceCents)}
+            <span className="text-4xl font-extrabold tracking-tight text-ink-900 dark:text-ink-50">
+              {money(priceCents)}
             </span>
             {discount > 0 && (
               <>
                 <span className="text-lg text-ink-400 line-through">{money(product.compareAtCents!)}</span>
-                <span className="chip bg-rose-50 text-rose-700 ring-1 ring-rose-200">-{discount}%</span>
+                <span className="chip bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800">-{discount}%</span>
               </>
             )}
           </div>
-          <p className="mt-1 text-sm text-ink-500">
-            em ate 3x de {money(Math.round(product.priceCents / 3))} sem juros · Pix com aprovacao imediata
+          <p className="mt-1 text-sm text-ink-500 dark:text-ink-400">
+            em ate 3x de {money(Math.round(priceCents / 3))} sem juros · Pix com aprovacao imediata
           </p>
 
-          <p className="mt-6 leading-relaxed text-ink-600">{product.description}</p>
+          <p className="mt-6 leading-relaxed text-ink-600 dark:text-ink-300">{product.description}</p>
+
+          <VariantPicker product={product} color={choice.color} size={choice.size} onChange={setChoice} />
 
           <div className="mt-7 flex flex-wrap items-center gap-3">
-            <div className="flex items-center rounded-xl border border-ink-200 bg-white">
+            <div className="flex items-center rounded-xl border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-900">
               <button
                 onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                 disabled={quantity <= 1}
-                className="px-3 py-3 text-ink-600 transition hover:bg-ink-50 disabled:opacity-40"
+                className="px-3 py-3 text-ink-600 dark:text-ink-300 transition hover:bg-ink-50 dark:hover:bg-ink-850 disabled:opacity-40"
                 aria-label="Diminuir"
               >
                 <Minus className="h-4 w-4" />
               </button>
               <span className="min-w-12 text-center text-sm font-bold">{quantity}</span>
               <button
-                onClick={() => setQuantity((q) => Math.min(stock.available, q + 1))}
-                disabled={quantity >= stock.available}
-                className="px-3 py-3 text-ink-600 transition hover:bg-ink-50 disabled:opacity-40"
+                onClick={() => setQuantity((q) => Math.min(disponivel, q + 1))}
+                disabled={quantity >= disponivel}
+                className="px-3 py-3 text-ink-600 dark:text-ink-300 transition hover:bg-ink-50 dark:hover:bg-ink-850 disabled:opacity-40"
                 aria-label="Aumentar"
               >
                 <Plus className="h-4 w-4" />
@@ -177,15 +209,15 @@ export function ProductDetailPage() {
 
             <button
               className="btn-brand h-[46px] flex-1 text-base"
-              disabled={stock.outOfStock || add.isPending}
+              disabled={needsChoice || esgotado || add.isPending}
               onClick={() =>
                 add.mutate(
-                  { productId: product.id, quantity },
+                  { productId: product.id, quantity, variantId: variant?.id },
                   {
                     onSuccess: () =>
                       toast.success(
                         'Adicionado ao carrinho',
-                        `${quantity}x ${product.name}`,
+                        `${quantity}x ${product.name}${variant ? ` — ${variant.label}` : ''}`,
                       ),
                   },
                 )
@@ -196,20 +228,30 @@ export function ProductDetailPage() {
               ) : (
                 <>
                   <ShoppingBag className="h-5 w-5" />
-                  {stock.outOfStock ? 'Produto esgotado' : 'Adicionar ao carrinho'}
+                  {needsChoice
+                    ? 'Escolha uma opcao'
+                    : esgotado
+                      ? 'Esgotado nesta opcao'
+                      : 'Adicionar ao carrinho'}
                 </>
               )}
             </button>
           </div>
 
-          {stock.lowStock && !stock.outOfStock && (
-            <p className="mt-3 rounded-xl bg-amber-50 px-3.5 py-2.5 text-sm font-medium text-amber-800">
-              Corre: restam apenas {stock.available} unidade(s) e o numero cai em tempo real conforme
-              outras pessoas compram.
+          {stock?.lowStock && !stock.outOfStock && (
+            <p className="mt-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 px-3.5 py-2.5 text-sm font-medium text-amber-800 dark:text-amber-200">
+              Corre: {variant ? <>restam apenas {stock.available} un. em <strong>{variant.label}</strong></> : <>restam apenas {stock.available} unidade(s)</>} e
+              o numero cai em tempo real conforme outras pessoas compram.
             </p>
           )}
 
-          <dl className="mt-8 grid gap-4 border-t border-ink-100 pt-6 sm:grid-cols-2">
+          {esgotado && product.variants.length > 0 && !needsChoice && (
+            <p className="mt-3 rounded-xl bg-ink-100 dark:bg-ink-800 px-3.5 py-2.5 text-sm text-ink-600 dark:text-ink-300">
+              <strong>{variant?.label}</strong> acabou. As outras opcoes acima continuam disponiveis.
+            </p>
+          )}
+
+          <dl className="mt-8 grid gap-4 border-t border-ink-100 dark:border-ink-800 pt-6 sm:grid-cols-2">
             {[
               { icon: Truck, title: 'Frete gratis', text: 'Em compras acima de R$ 299.' },
               { icon: ShieldCheck, title: 'Garantia 12 meses', text: 'Direto com o fabricante.' },
@@ -217,10 +259,10 @@ export function ProductDetailPage() {
               { icon: PackageCheck, title: 'Envio em 24h', text: 'Para pedidos aprovados ate 15h.' },
             ].map(({ icon: Icon, title, text }) => (
               <div key={title} className="flex items-start gap-2.5">
-                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                <Icon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600 dark:text-brand-400" />
                 <div>
-                  <dt className="text-sm font-semibold text-ink-900">{title}</dt>
-                  <dd className="text-sm text-ink-500">{text}</dd>
+                  <dt className="text-sm font-semibold text-ink-900 dark:text-ink-50">{title}</dt>
+                  <dd className="text-sm text-ink-500 dark:text-ink-400">{text}</dd>
                 </div>
               </div>
             ))}
@@ -230,7 +272,7 @@ export function ProductDetailPage() {
 
       {data.related.length > 0 && (
         <section className="mt-16">
-          <h2 className="mb-5 text-xl font-bold tracking-tight text-ink-900">Voce tambem pode gostar</h2>
+          <h2 className="mb-5 text-xl font-bold tracking-tight text-ink-900 dark:text-ink-50">Voce tambem pode gostar</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {data.related.map((p) => (
               <ProductCard key={p.id} product={p} />

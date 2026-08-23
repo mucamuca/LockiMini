@@ -102,7 +102,7 @@ export function AdminStock() {
               key={f.value}
               onClick={() => setFilter(f.value)}
               className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                filter === f.value ? 'bg-ink-900 text-white' : 'text-ink-600 hover:bg-ink-100'
+                filter === f.value ? 'bg-ink-900 text-white' : 'text-ink-600 dark:text-ink-300 hover:bg-ink-100 dark:hover:bg-ink-800'
               }`}
             >
               {f.label}
@@ -131,7 +131,7 @@ export function AdminStock() {
                   <th className="px-4 py-3" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-ink-100">
+              <tbody className="divide-y divide-ink-100 dark:divide-ink-800">
                 {rows.map((row) => {
                   // O socket pode ter trazido um numero mais novo que a listagem.
                   const available = live[row.productId]?.available ?? row.available;
@@ -144,17 +144,29 @@ export function AdminStock() {
   decoding="async"
   loading="lazy"/>
                           <div className="min-w-0">
-                            <p className="truncate font-medium text-ink-900">{row.name}</p>
+                            <p className="truncate font-medium text-ink-900 dark:text-ink-50">{row.name}</p>
+                            {row.variantLabel && (
+                              <span className="chip mt-0.5 bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-300">
+                                {row.colorHex && (
+                                  <span
+                                    className="h-2.5 w-2.5 rounded-full ring-1 ring-black/10"
+                                    style={{ backgroundColor: row.colorHex }}
+                                    aria-hidden
+                                  />
+                                )}
+                                {row.variantLabel}
+                              </span>
+                            )}
                             <p className="font-mono text-xs text-ink-400">
                               {row.sku} · {money(row.priceCents)}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-center font-semibold text-ink-900">{row.quantity}</td>
+                      <td className="px-4 py-3 text-center font-semibold text-ink-900 dark:text-ink-50">{row.quantity}</td>
                       <td className="px-4 py-3 text-center">
                         {row.reserved > 0 ? (
-                          <span className="chip bg-amber-50 text-amber-700 ring-1 ring-amber-200">
+                          <span className="chip bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800">
                             {row.reserved}
                           </span>
                         ) : (
@@ -165,21 +177,21 @@ export function AdminStock() {
                         <span
                           className={`chip ${
                             available <= 0
-                              ? 'bg-rose-50 text-rose-700 ring-1 ring-rose-200'
+                              ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 ring-1 ring-rose-200 dark:ring-rose-800'
                               : low
-                                ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
-                                : 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200'
+                                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800'
+                                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800'
                           }`}
                         >
                           {available}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-ink-500">{relativeTime(row.updatedAt)}</td>
+                      <td className="px-4 py-3 text-xs text-ink-500 dark:text-ink-400">{relativeTime(row.updatedAt)}</td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1">
                           <button
                             onClick={() => setHistoryOf(row)}
-                            className="rounded-lg p-2 text-ink-500 transition hover:bg-ink-100 hover:text-ink-900"
+                            className="rounded-lg p-2 text-ink-500 dark:text-ink-400 transition hover:bg-ink-100 dark:hover:bg-ink-800 hover:text-ink-900 dark:hover:text-white"
                             aria-label={`Historico de ${row.name}`}
                           >
                             <History className="h-4 w-4" />
@@ -214,7 +226,7 @@ function Summary({
   tone?: 'warning' | 'danger';
 }) {
   const color =
-    tone === 'danger' ? 'text-rose-600' : tone === 'warning' ? 'text-amber-600' : 'text-ink-900';
+    tone === 'danger' ? 'text-rose-600 dark:text-rose-400' : tone === 'warning' ? 'text-amber-600' : 'text-ink-900 dark:text-ink-50';
   return (
     <div className="card p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">{label}</p>
@@ -235,8 +247,17 @@ function AdjustDialog({ row, onClose }: { row: StockRow; onClose: () => void }) 
   const save = useMutation({
     mutationFn: () =>
       mode === 'delta'
-        ? api.post(`/admin/stock/${row.productId}/adjust`, { delta, reason, note: note || undefined })
-        : api.post(`/admin/stock/${row.productId}/set`, { quantity: absolute, note: note || undefined }),
+        ? api.post(`/admin/stock/${row.productId}/adjust`, {
+            delta,
+            reason,
+            note: note || undefined,
+            ...(row.variantId ? { variantId: row.variantId } : {}),
+          })
+        : api.post(`/admin/stock/${row.productId}/set`, {
+            quantity: absolute,
+            note: note || undefined,
+            ...(row.variantId ? { variantId: row.variantId } : {}),
+          }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin'] });
       queryClient.invalidateQueries({ queryKey: ['catalog'] });
@@ -253,21 +274,21 @@ function AdjustDialog({ row, onClose }: { row: StockRow; onClose: () => void }) 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-4" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-ink-950/40" onClick={onClose} />
-      <div className="relative w-full max-w-md animate-fade-up rounded-2xl bg-white p-6 shadow-2xl">
+      <div className="relative w-full max-w-md animate-fade-up rounded-2xl bg-white dark:bg-ink-900 p-6 shadow-2xl">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-base font-bold text-ink-900">Ajustar estoque</h2>
-            <p className="mt-0.5 text-sm text-ink-500">{row.name}</p>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Ajustar estoque</h2>
+            <p className="mt-0.5 text-sm text-ink-500 dark:text-ink-400">{row.name}</p>
           </div>
           <button onClick={onClose} className="btn-ghost px-2" aria-label="Fechar">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-ink-50 p-3 text-center text-sm">
+        <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-ink-50 dark:bg-ink-925 p-3 text-center text-sm">
           <div>
             <p className="text-xs text-ink-400">Fisico</p>
-            <p className="font-bold text-ink-900">{row.quantity}</p>
+            <p className="font-bold text-ink-900 dark:text-ink-50">{row.quantity}</p>
           </div>
           <div>
             <p className="text-xs text-ink-400">Reservado</p>
@@ -279,11 +300,11 @@ function AdjustDialog({ row, onClose }: { row: StockRow; onClose: () => void }) 
           </div>
         </div>
 
-        <div className="mt-5 flex rounded-xl border border-ink-200 p-1">
+        <div className="mt-5 flex rounded-xl border border-ink-200 dark:border-ink-700 p-1">
           <button
             onClick={() => setMode('delta')}
             className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
-              mode === 'delta' ? 'bg-ink-900 text-white' : 'text-ink-600'
+              mode === 'delta' ? 'bg-ink-900 text-white' : 'text-ink-600 dark:text-ink-300'
             }`}
           >
             Entrada / saida
@@ -291,7 +312,7 @@ function AdjustDialog({ row, onClose }: { row: StockRow; onClose: () => void }) 
           <button
             onClick={() => setMode('absolute')}
             className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition ${
-              mode === 'absolute' ? 'bg-ink-900 text-white' : 'text-ink-600'
+              mode === 'absolute' ? 'bg-ink-900 text-white' : 'text-ink-600 dark:text-ink-300'
             }`}
           >
             Contagem
@@ -358,7 +379,7 @@ function AdjustDialog({ row, onClose }: { row: StockRow; onClose: () => void }) 
 
         <p
           className={`mt-4 rounded-lg px-3 py-2 text-sm ${
-            invalid ? 'bg-rose-50 font-medium text-rose-700' : 'bg-ink-50 text-ink-600'
+            invalid ? 'bg-rose-50 dark:bg-rose-950/40 font-medium text-rose-700 dark:text-rose-300' : 'bg-ink-50 dark:bg-ink-925 text-ink-600 dark:text-ink-300'
           }`}
         >
           {invalid
@@ -392,11 +413,11 @@ function HistoryDialog({ row, onClose }: { row: StockRow; onClose: () => void })
   return (
     <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true">
       <div className="absolute inset-0 bg-ink-950/40" onClick={onClose} />
-      <aside className="relative flex h-full w-full max-w-md animate-slide-in flex-col bg-white shadow-2xl">
-        <header className="flex items-start justify-between border-b border-ink-100 px-5 py-4">
+      <aside className="relative flex h-full w-full max-w-md animate-slide-in flex-col bg-white dark:bg-ink-900 shadow-2xl">
+        <header className="flex items-start justify-between border-b border-ink-100 dark:border-ink-800 px-5 py-4">
           <div>
-            <h2 className="text-base font-bold text-ink-900">Historico de estoque</h2>
-            <p className="text-sm text-ink-500">{row.name}</p>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Historico de estoque</h2>
+            <p className="text-sm text-ink-500 dark:text-ink-400">{row.name}</p>
           </div>
           <button onClick={onClose} className="btn-ghost px-2" aria-label="Fechar">
             <X className="h-5 w-5" />
@@ -407,27 +428,27 @@ function HistoryDialog({ row, onClose }: { row: StockRow; onClose: () => void })
           {isLoading ? (
             <TableSkeleton rows={5} cols={1} />
           ) : (data?.items.length ?? 0) === 0 ? (
-            <p className="text-sm text-ink-500">Sem movimentacoes registradas.</p>
+            <p className="text-sm text-ink-500 dark:text-ink-400">Sem movimentacoes registradas.</p>
           ) : (
             <ol className="space-y-3">
               {data!.items.map((m) => (
-                <li key={m.id} className="flex gap-3 rounded-xl border border-ink-100 p-3">
+                <li key={m.id} className="flex gap-3 rounded-xl border border-ink-100 dark:border-ink-800 p-3">
                   <span
                     className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-xs font-bold ${
                       m.delta > 0
-                        ? 'bg-emerald-50 text-emerald-700'
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300'
                         : m.delta < 0
-                          ? 'bg-rose-50 text-rose-700'
-                          : 'bg-ink-100 text-ink-500'
+                          ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300'
+                          : 'bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-400'
                     }`}
                   >
                     {m.delta > 0 ? `+${m.delta}` : m.delta}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-ink-900">
+                    <p className="text-sm font-medium text-ink-900 dark:text-ink-50">
                       {STOCK_REASON_LABEL[m.reason] ?? m.reason}
                     </p>
-                    {m.note && <p className="text-xs text-ink-500">{m.note}</p>}
+                    {m.note && <p className="text-xs text-ink-500 dark:text-ink-400">{m.note}</p>}
                     <p className="mt-0.5 text-xs text-ink-400">
                       {dateTime(m.createdAt)}
                       {m.actor?.name ? ` · ${m.actor.name}` : ''}

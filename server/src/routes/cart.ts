@@ -23,6 +23,8 @@ cartRouter.get(
 
 const addSchema = z.object({
   productId: z.string().min(1),
+  /** Obrigatorio quando o produto tem variacoes — validado em resolveVariant. */
+  variantId: z.string().min(1).optional(),
   quantity: z.coerce.number().int().min(1).max(99).default(1),
 });
 
@@ -30,9 +32,9 @@ cartRouter.post(
   '/items',
   validate(addSchema),
   asyncHandler(async (req, res) => {
-    const { productId, quantity } = req.body as z.infer<typeof addSchema>;
+    const { productId, variantId, quantity } = req.body as z.infer<typeof addSchema>;
     const cart = await resolveCart(req, res);
-    res.json({ cart: await addToCart(cart.id, productId, quantity) });
+    res.json({ cart: await addToCart(cart.id, productId, quantity, variantId) });
   }),
 );
 

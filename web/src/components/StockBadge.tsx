@@ -11,13 +11,17 @@ import type { StockInfo } from '../lib/types';
 export function StockBadge({
   productId,
   fallback,
+  variantStock,
   size = 'sm',
 }: {
   productId: string;
   fallback: StockInfo;
+  /** Quando ha variacao escolhida, e o estoque DELA que o selo mostra. */
+  variantStock?: StockInfo;
   size?: 'sm' | 'md';
 }) {
-  const stock = useStockStore((s) => s.live[productId]) ?? fallback;
+  const live = useStockStore((s) => s.live[productId]);
+  const stock = variantStock ?? live ?? fallback;
   const flashedAt = useStockStore((s) => s.flashing[productId]);
   const clearFlash = useStockStore((s) => s.clearFlash);
   const [flash, setFlash] = useState(false);
@@ -36,7 +40,7 @@ export function StockBadge({
 
   if (stock.outOfStock) {
     return (
-      <span className={`chip bg-ink-100 text-ink-500 ring-1 ring-ink-200 ${base}`}>
+      <span className={`chip bg-ink-100 dark:bg-ink-800 text-ink-500 dark:text-ink-400 ring-1 ring-ink-200 dark:ring-ink-700 ${base}`}>
         <span className="h-1.5 w-1.5 rounded-full bg-ink-400" aria-hidden />
         Esgotado
       </span>
@@ -46,7 +50,7 @@ export function StockBadge({
   if (stock.lowStock) {
     return (
       <span
-        className={`chip bg-amber-50 text-amber-700 ring-1 ring-amber-200 ${base} ${flash ? 'animate-pulse-once' : ''}`}
+        className={`chip bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800 ${base} ${flash ? 'animate-pulse-once' : ''}`}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
         Ultimas {stock.available} un.
@@ -56,7 +60,7 @@ export function StockBadge({
 
   return (
     <span
-      className={`chip bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 ${base} ${flash ? 'animate-pulse-once' : ''}`}
+      className={`chip bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800 ${base} ${flash ? 'animate-pulse-once' : ''}`}
     >
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
       {stock.available} em estoque

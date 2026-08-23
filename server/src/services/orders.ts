@@ -6,6 +6,7 @@ import { badRequest, conflict, notFound, unprocessable } from '../http/errors.js
 import { getPaymentProvider, type CardDetails, type PaymentMethod } from '../payments/index.js';
 import { emitOrderCreated, emitOrderUpdated } from '../realtime.js';
 import { orderDTO, parseImages } from './serializers.js';
+import { variantLabel, variantPrice } from './variants.js';
 import {
   consumeReservations,
   createReservations,
@@ -80,7 +81,7 @@ export type CheckoutInput = {
 export async function checkout(input: CheckoutInput) {
   const cart = await prisma.cart.findUnique({
     where: { id: input.cartId },
-    include: { items: { include: { product: { include: { inventory: true } } } } },
+    include: { items: { include: { product: { include: { inventory: true, variants: true } } } } },
   });
   if (!cart || cart.items.length === 0) throw badRequest('Seu carrinho esta vazio.', 'empty_cart');
 
@@ -92,8 +93,18 @@ export async function checkout(input: CheckoutInput) {
     );
   }
 
-  const lines = cart.items.map((i) => ({ productId: i.productId, quantity: i.quantity }));
-  const subtotalCents = cart.items.reduce((sum, i) => sum + i.product.priceCents * i.quantity, 0);
+  // Cada linha carrega a variacao: a reserva trava "Preto M", nao o produto.
+  const lines = cart.items.map((i) => ({
+    productId: i.productId,
+    variantId: i.variantId,
+    quantity: i.quantity,
+  }));
+
+  /** Preco efetivo do item: o da variacao quando ela sobrepoe, senao o do produto. */
+  const priceOf = (i: (typeof cart.items)[number]) =>
+    variantPrice(i.product, i.product.variants.find((v) => v.id === i.variantId));
+
+  const subtotalCents = cart.items.reduce((sum, i) => sum + priceOf(i) * i.quantity, 0);
   const { discountCents, coupon } = await resolveCoupon(input.couponCode, subtotalCents);
   const shippingCents =
     subtotalCents >= env.FREE_SHIPPING_THRESHOLD_CENTS ? 0 : env.FLAT_SHIPPING_CENTS;
@@ -121,15 +132,23 @@ export async function checkout(input: CheckoutInput) {
           }),
           notes: input.notes ?? null,
           items: {
-            create: cart.items.map((i) => ({
-              productId: i.productId,
-              name: i.product.name,
-              sku: i.product.sku,
-              imageUrl: parseImages(i.product.images)[0] ?? null,
-              unitPriceCents: i.product.priceCents,
-              quantity: i.quantity,
-              totalCents: i.product.priceCents * i.quantity,
-            })),
+            create: cart.items.map((i) => {
+              const variant = i.product.variants.find((v) => v.id === i.variantId);
+              const unit = priceOf(i);
+              return {
+                productId: i.productId,
+                variantId: i.variantId || null,
+                // Rotulo por extenso, nao so o id: o pedido continua legivel
+                // mesmo que a variacao seja renomeada ou saia de linha depois.
+                variantLabel: variant ? variantLabel(variant) : null,
+                name: i.product.name,
+                sku: variant?.sku ?? i.product.sku,
+                imageUrl: variant?.imageUrl ?? parseImages(i.product.images)[0] ?? null,
+                unitPriceCents: unit,
+                quantity: i.quantity,
+                totalCents: unit * i.quantity,
+              };
+            }),
           },
         },
         include: { items: true, payments: true },

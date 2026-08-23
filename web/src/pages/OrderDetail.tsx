@@ -82,8 +82,8 @@ export function OrderDetailPage() {
     return (
       <div className="mx-auto max-w-md px-4 py-20">
         <div className="card p-6">
-          <h1 className="text-lg font-bold text-ink-900">Confirme seu e-mail</h1>
-          <p className="mt-1.5 text-sm text-ink-500">
+          <h1 className="text-lg font-bold text-ink-900 dark:text-ink-50">Confirme seu e-mail</h1>
+          <p className="mt-1.5 text-sm text-ink-500 dark:text-ink-400">
             Informe o e-mail usado na compra para ver o pedido <strong>{number}</strong>.
           </p>
           <form
@@ -104,8 +104,8 @@ export function OrderDetailPage() {
             <button type="submit" className="btn-primary w-full">Ver pedido</button>
           </form>
           {!user && (
-            <p className="mt-4 text-center text-xs text-ink-500">
-              Ou <Link to="/entrar" className="font-semibold text-brand-600 hover:underline">entre na sua conta</Link>.
+            <p className="mt-4 text-center text-xs text-ink-500 dark:text-ink-400">
+              Ou <Link to="/entrar" className="font-semibold text-brand-600 dark:text-brand-400 hover:underline">entre na sua conta</Link>.
             </p>
           )}
         </div>
@@ -140,46 +140,46 @@ export function OrderDetailPage() {
     <div className="mx-auto max-w-4xl px-4 py-10">
       <div
         className={`rounded-2xl p-6 ${
-          failed ? 'bg-rose-50 ring-1 ring-rose-200' : awaiting ? 'bg-amber-50 ring-1 ring-amber-200' : 'bg-emerald-50 ring-1 ring-emerald-200'
+          failed ? 'bg-rose-50 dark:bg-rose-950/40 ring-1 ring-rose-200 dark:ring-rose-800' : awaiting ? 'bg-amber-50 dark:bg-amber-950/40 ring-1 ring-amber-200 dark:ring-amber-800' : 'bg-emerald-50 dark:bg-emerald-950/40 ring-1 ring-emerald-200 dark:ring-emerald-800'
         }`}
       >
         <div className="flex items-start gap-4">
           {failed ? (
-            <XCircle className="h-8 w-8 shrink-0 text-rose-600" />
+            <XCircle className="h-8 w-8 shrink-0 text-rose-600 dark:text-rose-400" />
           ) : awaiting ? (
             <QrCode className="h-8 w-8 shrink-0 text-amber-600" />
           ) : (
             <CheckCircle2 className="h-8 w-8 shrink-0 text-emerald-600" />
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-ink-900 sm:text-2xl">
+            <h1 className="text-xl font-bold text-ink-900 dark:text-ink-50 sm:text-2xl">
               {failed
                 ? 'Pagamento nao aprovado'
                 : awaiting
                   ? 'Aguardando o pagamento'
                   : 'Pedido confirmado!'}
             </h1>
-            <p className="mt-1 text-sm text-ink-600">
+            <p className="mt-1 text-sm text-ink-600 dark:text-ink-300">
               {failed
                 ? order.notes ?? 'O emissor recusou a cobranca. As unidades voltaram para o estoque.'
                 : awaiting
                   ? 'Assim que o pagamento cair, o pedido segue para separacao automaticamente.'
                   : 'Enviamos a confirmacao para ' + order.email + '.'}
             </p>
-            <p className="mt-3 font-mono text-sm font-semibold text-ink-900">{order.number}</p>
+            <p className="mt-3 font-mono text-sm font-semibold text-ink-900 dark:text-ink-50">{order.number}</p>
           </div>
         </div>
       </div>
 
       {awaiting && payload.method === 'pix' && (
         <section className="card mt-6 p-6">
-          <h2 className="flex items-center gap-2 text-base font-bold text-ink-900">
+          <h2 className="flex items-center gap-2 text-base font-bold text-ink-900 dark:text-ink-50">
             <QrCode className="h-5 w-5" /> Pague com Pix
           </h2>
-          <p className="mt-1.5 text-sm text-ink-500">{payload.instructions}</p>
-          <div className="mt-4 rounded-xl border border-dashed border-ink-200 bg-ink-50 p-4">
+          <p className="mt-1.5 text-sm text-ink-500 dark:text-ink-400">{payload.instructions}</p>
+          <div className="mt-4 rounded-xl border border-dashed border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-925 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Pix copia e cola</p>
-            <p className="mt-1.5 break-all font-mono text-xs text-ink-700">{payload.copyPaste}</p>
+            <p className="mt-1.5 break-all font-mono text-xs text-ink-700 dark:text-ink-200">{payload.copyPaste}</p>
             <button
               onClick={() => copy(payload.copyPaste, 'Codigo Pix na area de transferencia.')}
               className="btn-outline mt-3"
@@ -192,11 +192,11 @@ export function OrderDetailPage() {
 
       {awaiting && payload.method === 'boleto' && (
         <section className="card mt-6 p-6">
-          <h2 className="text-base font-bold text-ink-900">Boleto bancario</h2>
-          <p className="mt-1.5 text-sm text-ink-500">{payload.instructions}</p>
-          <div className="mt-4 rounded-xl border border-dashed border-ink-200 bg-ink-50 p-4">
+          <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Boleto bancario</h2>
+          <p className="mt-1.5 text-sm text-ink-500 dark:text-ink-400">{payload.instructions}</p>
+          <div className="mt-4 rounded-xl border border-dashed border-ink-200 dark:border-ink-700 bg-ink-50 dark:bg-ink-925 p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-400">Linha digitavel</p>
-            <p className="mt-1.5 font-mono text-sm text-ink-800">{payload.digitableLine}</p>
+            <p className="mt-1.5 font-mono text-sm text-ink-800 dark:text-ink-100">{payload.digitableLine}</p>
             <button
               onClick={() => copy(payload.digitableLine, 'Linha digitavel copiada.')}
               className="btn-outline mt-3"
@@ -209,7 +209,7 @@ export function OrderDetailPage() {
 
       {awaiting && payment?.provider === 'mock' && (
         <section className="mt-4 rounded-xl border border-dashed border-brand-300 bg-brand-50/60 p-4">
-          <p className="text-sm font-semibold text-brand-900">Simulador do gateway de testes</p>
+          <p className="text-sm font-semibold text-brand-900 dark:text-brand-100">Simulador do gateway de testes</p>
           <p className="mt-1 text-sm text-brand-800">
             Em producao quem confirma este pagamento e o webhook do provedor. Aqui voce pode disparar o
             desfecho manualmente para ver o estoque reagir.
@@ -236,7 +236,7 @@ export function OrderDetailPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <section className="card p-6">
-            <h2 className="text-base font-bold text-ink-900">Acompanhamento</h2>
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Acompanhamento</h2>
             <ol className="mt-5 space-y-0">
               {TIMELINE.map((step, i) => {
                 const currentIndex = TIMELINE.findIndex((s) => s.status === order.status);
@@ -248,10 +248,10 @@ export function OrderDetailPage() {
                       <div
                         className={`grid h-8 w-8 place-items-center rounded-full ${
                           isCancelled
-                            ? 'bg-ink-100 text-ink-400'
+                            ? 'bg-ink-100 dark:bg-ink-800 text-ink-400'
                             : done
                               ? 'bg-emerald-500 text-white'
-                              : 'bg-ink-100 text-ink-400'
+                              : 'bg-ink-100 dark:bg-ink-800 text-ink-400'
                         }`}
                       >
                         <step.icon className="h-4 w-4" />
@@ -261,7 +261,7 @@ export function OrderDetailPage() {
                       )}
                     </div>
                     <div className="pb-8">
-                      <p className={`text-sm font-semibold ${done && !isCancelled ? 'text-ink-900' : 'text-ink-400'}`}>
+                      <p className={`text-sm font-semibold ${done && !isCancelled ? 'text-ink-900 dark:text-ink-50' : 'text-ink-400'}`}>
                         {step.label}
                       </p>
                     </div>
@@ -270,27 +270,30 @@ export function OrderDetailPage() {
               })}
             </ol>
             {(order.status === 'CANCELLED' || order.status === 'REFUNDED') && (
-              <p className="rounded-lg bg-ink-100 px-3 py-2 text-sm font-medium text-ink-600">
+              <p className="rounded-lg bg-ink-100 dark:bg-ink-800 px-3 py-2 text-sm font-medium text-ink-600 dark:text-ink-300">
                 Este pedido foi {order.status === 'REFUNDED' ? 'estornado' : 'cancelado'}.
               </p>
             )}
           </section>
 
           <section className="card p-6">
-            <h2 className="text-base font-bold text-ink-900">Itens</h2>
-            <ul className="mt-4 divide-y divide-ink-100">
+            <h2 className="text-base font-bold text-ink-900 dark:text-ink-50">Itens</h2>
+            <ul className="mt-4 divide-y divide-ink-100 dark:divide-ink-800">
               {order.items.map((item) => (
                 <li key={item.id} className="flex gap-4 py-3 first:pt-0 last:pb-0">
                   <img src={item.imageUrl ?? ''} alt="" className="h-16 w-16 rounded-lg object-cover"
   decoding="async"
   loading="lazy"/>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink-900">{item.name}</p>
-                    <p className="text-xs text-ink-500">
+                    <p className="text-sm font-semibold text-ink-900 dark:text-ink-50">{item.name}</p>
+                    {item.variantLabel && (
+                      <p className="text-xs font-medium text-ink-600 dark:text-ink-300">{item.variantLabel}</p>
+                    )}
+                    <p className="text-xs text-ink-500 dark:text-ink-400">
                       {item.quantity} x {money(item.unitPriceCents)} · SKU {item.sku}
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-ink-900">{money(item.totalCents)}</span>
+                  <span className="text-sm font-bold text-ink-900 dark:text-ink-50">{money(item.totalCents)}</span>
                 </li>
               ))}
             </ul>
@@ -300,7 +303,7 @@ export function OrderDetailPage() {
         <aside className="space-y-6">
           <div className="card p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-ink-900">Status</h2>
+              <h2 className="text-sm font-bold text-ink-900 dark:text-ink-50">Status</h2>
               <StatusBadge status={order.status} />
             </div>
             <dl className="mt-4 space-y-2 text-sm">
@@ -311,7 +314,7 @@ export function OrderDetailPage() {
                 <Row label="Desconto" value={`-${money(order.discountCents)}`} />
               )}
               <Row label="Frete" value={order.shippingCents === 0 ? 'Gratis' : money(order.shippingCents)} />
-              <div className="flex justify-between border-t border-ink-100 pt-3 text-base font-bold text-ink-900">
+              <div className="flex justify-between border-t border-ink-100 dark:border-ink-800 pt-3 text-base font-bold text-ink-900 dark:text-ink-50">
                 <dt>Total</dt>
                 <dd>{money(order.totalCents)}</dd>
               </div>
@@ -321,7 +324,7 @@ export function OrderDetailPage() {
               <button
                 onClick={() => cancel.mutate(order.id)}
                 disabled={cancel.isPending}
-                className="btn-outline mt-4 w-full text-rose-600"
+                className="btn-outline mt-4 w-full text-rose-600 dark:text-rose-400"
               >
                 {cancel.isPending ? <Spinner /> : 'Cancelar pedido'}
               </button>
@@ -330,9 +333,9 @@ export function OrderDetailPage() {
 
           {order.shippingAddress && (
             <div className="card p-5">
-              <h2 className="text-sm font-bold text-ink-900">Entrega</h2>
-              <address className="mt-3 text-sm not-italic leading-relaxed text-ink-600">
-                <strong className="block text-ink-900">{order.shippingAddress.recipient}</strong>
+              <h2 className="text-sm font-bold text-ink-900 dark:text-ink-50">Entrega</h2>
+              <address className="mt-3 text-sm not-italic leading-relaxed text-ink-600 dark:text-ink-300">
+                <strong className="block text-ink-900 dark:text-ink-50">{order.shippingAddress.recipient}</strong>
                 {order.shippingAddress.line1}
                 {order.shippingAddress.line2 ? `, ${order.shippingAddress.line2}` : ''}
                 <br />
@@ -358,9 +361,9 @@ export function OrderDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between text-ink-600">
+    <div className="flex justify-between text-ink-600 dark:text-ink-300">
       <dt>{label}</dt>
-      <dd className="font-medium text-ink-900">{value}</dd>
+      <dd className="font-medium text-ink-900 dark:text-ink-50">{value}</dd>
     </div>
   );
 }

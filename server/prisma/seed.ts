@@ -19,7 +19,29 @@ type Seed = {
   quantity: number;
   lowStockThreshold?: number;
   featured?: boolean;
+  /** Eixos que este produto usa. Ausente = produto sem variacao. */
+  variants?: VariantSeed;
 };
+
+type VariantSeed = {
+  colors?: { name: string; hex: string }[];
+  /** `extraCents` soma ao preco base — o 512 GB custa mais que o 256 GB. */
+  sizes?: { name: string; extraCents?: number }[];
+};
+
+/**
+ * Distribui o estoque do produto entre as combinacoes.
+ *
+ * Os numeros nao sao uniformes de proposito: uma loja real tem tamanho M
+ * acabando enquanto o GG encalha, e e isso que deixa a tela de estoque e os
+ * avisos de "ultimas unidades" interessantes de olhar.
+ */
+function splitStock(total: number, parts: number, index: number) {
+  const base = Math.floor(total / parts);
+  const resto = total % parts;
+  const peso = [1.4, 0.35, 1, 0.6, 1.2, 0.15][index % 6];
+  return Math.max(0, Math.round(base * peso) + (index < resto ? 1 : 0));
+}
 
 const catalog: { category: string; products: Seed[] }[] = [
   {
@@ -27,6 +49,13 @@ const catalog: { category: string; products: Seed[] }[] = [
     products: [
       {
         sku: 'AUD-HP-001',
+        variants: {
+          colors: [
+            { name: 'Preto Meia-Noite', hex: '#101317' },
+            { name: 'Prata Nebula', hex: '#c9ced6' },
+            { name: 'Azul Cobalto', hex: '#1c4fa1' },
+          ],
+        },
         name: 'Fone Over-Ear Aurora ANC',
         description:
           'Cancelamento ativo de ruido hibrido, 40 h de bateria e espuma com memoria. Conecta em dois aparelhos ao mesmo tempo, entao a chamada do notebook interrompe a musica do celular sem voce tocar em nada.',
@@ -69,15 +98,33 @@ const catalog: { category: string; products: Seed[] }[] = [
     products: [
       {
         sku: 'CMP-KB-101',
-        name: 'Teclado Mecanico Kite 75%',
+        variants: {
+          colors: [
+            { name: 'Branco Gelo', hex: '#eef0f3' },
+            { name: 'Grafite', hex: '#2b2f36' },
+          ],
+          sizes: [
+            { name: '60%' },
+            { name: '75%', extraCents: 12000 },
+            { name: 'Full-size', extraCents: 24000 },
+          ],
+        },
+        name: 'Teclado Mecanico Kite',
         description:
-          'Layout 75% ABNT2, switches lubrificados de fabrica e tres camadas de espuma. Hot-swap: troca de switch sem ferro de solda.',
+          'Switches lubrificados de fabrica e tres camadas de espuma, em ABNT2. Hot-swap: troca de switch sem ferro de solda. Escolha o layout — 60% para mesa curta, full-size para quem usa o teclado numerico.',
         priceCents: 74900,
         quantity: 18,
         featured: true,
       },
       {
         sku: 'CMP-MS-102',
+        variants: {
+          colors: [
+            { name: 'Preto', hex: '#15181d' },
+            { name: 'Branco', hex: '#f2f4f7' },
+            { name: 'Rosa Quartzo', hex: '#e3a2b5' },
+          ],
+        },
         name: 'Mouse Sem Fio Glide Pro',
         description:
           'Sensor de 26.000 DPI, 58 g e clique optico. Bateria dura cerca de 90 h com iluminacao desligada.',
@@ -124,6 +171,13 @@ const catalog: { category: string; products: Seed[] }[] = [
     products: [
       {
         sku: 'HOM-LP-201',
+        variants: {
+          colors: [
+            { name: 'Branco Fosco', hex: '#f5f5f3' },
+            { name: 'Preto Fosco', hex: '#1b1c1e' },
+            { name: 'Bronze', hex: '#8a6a44' },
+          ],
+        },
         name: 'Lampada Smart RGB (kit 3)',
         description:
           'Wi-Fi 2.4 GHz, 16 milhoes de cores e agenda por horario. Funciona com Alexa e Google Home.',
@@ -189,7 +243,14 @@ const catalog: { category: string; products: Seed[] }[] = [
       },
       {
         sku: 'FOT-BG-304',
-        name: 'Mochila Fotografica 25L',
+        variants: {
+          sizes: [
+            { name: '18 L' },
+            { name: '25 L', extraCents: 9000 },
+            { name: '32 L', extraCents: 18000 },
+          ],
+        },
+        name: 'Mochila Fotografica Field',
         description:
           'Acesso lateral rapido, divisorias reconfiguraveis e capa de chuva. Comporta um corpo com lente acoplada e tres lentes.',
         priceCents: 54900,
@@ -211,7 +272,18 @@ const catalog: { category: string; products: Seed[] }[] = [
       },
       {
         sku: 'ACC-CB-402',
-        name: 'Cabo USB-C Trancado 2 m',
+        variants: {
+          colors: [
+            { name: 'Cinza Urbano', hex: '#5b6270' },
+            { name: 'Verde Musgo', hex: '#4a5a44' },
+          ],
+          sizes: [
+            { name: '1 m' },
+            { name: '2 m', extraCents: 1500 },
+            { name: '3 m', extraCents: 3000 },
+          ],
+        },
+        name: 'Cabo USB-C Trancado',
         description:
           'Suporta 240 W e USB 3.2 (20 Gbps). Malha de nylon testada para 30.000 dobras.',
         priceCents: 8900,
@@ -256,6 +328,7 @@ async function main() {
   await prisma.cartItem.deleteMany();
   await prisma.cart.deleteMany();
   await prisma.inventory.deleteMany();
+  await prisma.productVariant.deleteMany();
   await prisma.product.deleteMany();
   await prisma.category.deleteMany();
   await prisma.coupon.deleteMany();
@@ -308,6 +381,24 @@ async function main() {
     for (const p of group.products) {
       const productSlug = slugify(p.name);
 
+      // Monta o produto das combinacoes: cor x tamanho. Se so um eixo existir,
+      // o outro fica nulo e a tela mostra um seletor so.
+      const combos: { colorName: string | null; colorHex: string | null; sizeName: string | null; extraCents: number }[] = [];
+      const colors = p.variants?.colors ?? [];
+      const sizes = p.variants?.sizes ?? [];
+      if (colors.length > 0 || sizes.length > 0) {
+        for (const c of colors.length > 0 ? colors : [null]) {
+          for (const sz of sizes.length > 0 ? sizes : [null]) {
+            combos.push({
+              colorName: c?.name ?? null,
+              colorHex: c?.hex ?? null,
+              sizeName: sz?.name ?? null,
+              extraCents: sz?.extraCents ?? 0,
+            });
+          }
+        }
+      }
+
       const product = await prisma.product.create({
         data: {
           sku: p.sku,
@@ -319,13 +410,53 @@ async function main() {
           images: JSON.stringify([img(p.sku, 1), img(p.sku, 2), img(p.sku, 3)]),
           categoryId: category.id,
           featured: p.featured ?? false,
-          inventory: {
-            create: { quantity: p.quantity, lowStockThreshold: p.lowStockThreshold ?? 5 },
-          },
+          // Produto com variacoes tem uma linha de estoque por combinacao,
+          // criadas logo abaixo; sem variacoes, uma linha unica com a sentinela.
+          inventory:
+            combos.length > 0
+              ? undefined
+              : { create: { quantity: p.quantity, lowStockThreshold: p.lowStockThreshold ?? 5 } },
         },
       });
 
-      if (p.quantity > 0) {
+      if (combos.length > 0) {
+        let i = 0;
+        for (const combo of combos) {
+          const quantity = splitStock(p.quantity, combos.length, i);
+          const variant = await prisma.productVariant.create({
+            data: {
+              productId: product.id,
+              sku: `${p.sku}-${String(i + 1).padStart(2, '0')}`,
+              colorName: combo.colorName,
+              colorHex: combo.colorHex,
+              sizeName: combo.sizeName,
+              priceCents: combo.extraCents > 0 ? p.priceCents + combo.extraCents : null,
+              position: i,
+            },
+          });
+          await prisma.inventory.create({
+            data: {
+              productId: product.id,
+              variantId: variant.id,
+              quantity,
+              lowStockThreshold: p.lowStockThreshold ?? 5,
+            },
+          });
+          if (quantity > 0) {
+            await prisma.stockMovement.create({
+              data: {
+                productId: product.id,
+                variantId: variant.id,
+                delta: quantity,
+                reason: 'PURCHASE_ORDER',
+                note: 'Carga inicial de estoque',
+                actorId: admin.id,
+              },
+            });
+          }
+          i++;
+        }
+      } else if (p.quantity > 0) {
         await prisma.stockMovement.create({
           data: {
             productId: product.id,
