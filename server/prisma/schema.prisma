@@ -1,0 +1,278 @@
+// LockiMini — modelo de dados
+// SQLite por padrao (zero configuracao). Para Postgres, troque o provider
+// e a DATABASE_URL; nenhum campo abaixo usa recursos exclusivos de SQLite.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         Role      @default(CUSTOMER)
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  addresses     Address[]
+  orders        Order[]
+  carts         Cart[]
+  refreshTokens RefreshToken[]
+  movements     StockMovement[] @relation("StockMovementActor")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label      String  @default("Principal")
+  recipient  String
+  line1      String
+  line2      String?
+  district   String
+  city       String
+  state      String
+  postalCode String
+  country    String  @default("BR")
+  phone      String?
+  isDefault  Boolean @default(false)
+
+  @@index([userId])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  imageUrl  String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id            String   @id @default(cuid())
+  sku           String   @unique
+  name          String
+  slug          String   @unique
+  description   String
+  priceCents    Int
+  compareAtCents Int?
+  currency      String   @default("BRL")
+  images        String   @default("[]") // JSON array de URLs
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  active        Boolean  @default(true)
+  featured      Boolean  @default(false)
+  weightGrams   Int      @default(500)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  inventory    Inventory?
+  cartItems    CartItem[]
+  orderItems   OrderItem[]
+  movements    StockMovement[]
+  reservations StockReservation[]
+
+  @@index([categoryId])
+  @@index([active])
+}
+
+/// Fonte unica de verdade do estoque.
+/// disponivel = quantity - reserved. Toda mutacao passa por SQL atomico
+/// com guarda (ver services/stock.ts), entao concorrencia nao gera oversell.
+model Inventory {
+  id                String   @id @default(cuid())
+  productId         String   @unique
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity          Int      @default(0)
+  reserved          Int      @default(0)
+  lowStockThreshold Int      @default(5)
+  updatedAt         DateTime @updatedAt
+}
+
+enum StockReason {
+  PURCHASE_ORDER
+  SALE
+  CANCELLATION
+  RETURN
+  MANUAL_ADJUSTMENT
+  LOSS
+}
+
+model StockMovement {
+  id        String      @id @default(cuid())
+  productId String
+  product   Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  delta     Int
+  reason    StockReason
+  note      String?
+  orderId   String?
+  actorId   String?
+  actor     User?       @relation("StockMovementActor", fields: [actorId], references: [id], onDelete: SetNull)
+  createdAt DateTime    @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
+}
+
+enum ReservationStatus {
+  ACTIVE
+  CONSUMED
+  RELEASED
+}
+
+/// Reserva temporaria criada no checkout. Impede que dois clientes paguem
+/// pela mesma ultima unidade enquanto o pagamento e processado.
+model StockReservation {
+  id        String            @id @default(cuid())
+  orderId   String
+  order     Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  status    ReservationStatus @default(ACTIVE)
+  expiresAt DateTime
+  createdAt DateTime          @default(now())
+
+  @@index([orderId])
+  @@index([status, expiresAt])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String     @unique // carrinho anonimo (cookie)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  @@unique([cartId, productId])
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  number         String      @unique
+  userId         String?
+  user           User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email          String
+  status         OrderStatus @default(PENDING_PAYMENT)
+  subtotalCents  Int
+  shippingCents  Int         @default(0)
+  discountCents  Int         @default(0)
+  totalCents     Int
+  currency       String      @default("BRL")
+  shippingAddress String     // JSON
+  notes          String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  items        OrderItem[]
+  payments     Payment[]
+  reservations StockReservation[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id             String  @id @default(cuid())
+  orderId        String
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String?
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  // snapshots: o pedido nao pode mudar se o produto for editado depois
+  name           String
+  sku            String
+  imageUrl       String?
+  unitPriceCents Int
+  quantity       Int
+  totalCents     Int
+
+  @@index([orderId])
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  orderId     String
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  provider    String        // "mock" | "stripe"
+  method      String        // "credit_card" | "pix" | "boleto"
+  providerRef String?       @unique
+  status      PaymentStatus @default(PENDING)
+  amountCents Int
+  payload     String?       // JSON: qr code do pix, linha digitavel do boleto, etc.
+  failureCode String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([orderId])
+}
+
+model Coupon {
+  id             String   @id @default(cuid())
+  code           String   @unique
+  percentOff     Int?
+  amountOffCents Int?
+  minSubtotalCents Int    @default(0)
+  active         Boolean  @default(true)
+  expiresAt      DateTime?
+  maxUses        Int?
+  uses           Int      @default(0)
+  createdAt      DateTime @default(now())
+}

@@ -1,0 +1,37 @@
+{
+  "name": "lockimini",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Plataforma de e-commerce completa: catalogo, carrinho, checkout, pagamentos, estoque em tempo real e painel administrativo.",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "setup": "npm install && npm run db:push -w server && npm run db:seed -w server",
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm:dev:server\" \"npm:dev:web\"",
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w server && npm run build -w web",
+    "start": "npm run start -w server",
+    "db:push": "npm run db:push -w server",
+    "db:seed": "npm run db:seed -w server",
+    "db:studio": "npm run db:studio -w server",
+    "db:reset": "npm run db:reset -w server",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "prisma@6.19.3": true,
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "esbuild@0.28.2": true,
+    "esbuild@0.25.12": true
+  }
+}
