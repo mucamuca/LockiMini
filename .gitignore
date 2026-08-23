@@ -32,3 +32,4 @@ desktop.ini
 
 # cache incremental do TypeScript
 *.tsbuildinfo
+.claude/
