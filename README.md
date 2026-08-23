@@ -11,6 +11,41 @@ Monorepo com dois workspaces npm:
 
 ---
 
+## Apresentação do projeto
+
+O LockiMini oferece uma experiência de loja responsiva para o cliente e um painel
+administrativo completo para a operação. As telas abaixo mostram a vitrine, o catálogo e
+os recursos de gestão construídos no projeto.
+
+### Loja
+
+**Página inicial** — hero com destaque para estoque sincronizado em tempo real.
+
+![Página inicial do LockiMini](docs/images/store-home-hero.png)
+
+**Vitrine** — benefícios da loja, categorias, produtos em destaque e produtos recém-chegados.
+
+| Categorias e destaques | Produtos recém-chegados |
+| --- | --- |
+| ![Categorias e produtos em destaque](docs/images/store-home-categories.png) | ![Produtos recém-chegados](docs/images/store-home-products.png) |
+
+**Catálogo** — filtros por categoria, faixa de preço e disponibilidade, ordenação e estoque
+visível diretamente nos cartões.
+
+![Catálogo de produtos](docs/images/store-catalog.png)
+
+### Painel administrativo
+
+| Visão geral | Ajuste de estoque |
+| --- | --- |
+| ![Painel com indicadores, pedidos e alertas de estoque](docs/images/admin-dashboard.png) | ![Modal de ajuste de estoque](docs/images/admin-stock-adjustment.png) |
+
+**Cupons** — criação e gerenciamento de descontos aplicáveis no checkout.
+
+![Gerenciamento de cupons](docs/images/admin-coupons.png)
+
+---
+
 ## Visão geral da arquitetura
 
 O LockiMini separa claramente a experiência de compra da regra de negócio. O navegador
@@ -368,3 +403,9 @@ Os termos completos estão em [LICENSE](LICENSE). Para que terceiros também nã
 visualizar ou baixar o código, a visibilidade do repositório no GitHub deve permanecer
 configurada como **privada**; a licença limita o uso jurídico, mas não torna confidencial
 um repositório público.
+
+---
+
+## Autores
+
+- [Murilo Roque (@mucamuca)](https://github.com/mucamuca)
