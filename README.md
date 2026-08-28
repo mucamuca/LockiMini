@@ -500,6 +500,6 @@ um repositório público.
 
 ---
 
-## Autores
+## Autor
 
-- [Murilo Roque (@mucamuca)](https://github.com/mucamuca)
+Murilo Roque — [@murilotroque](https://github.com/murilotroque)
